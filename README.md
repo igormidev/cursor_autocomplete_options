@@ -45,6 +45,21 @@ void initState() {
 }
 ```
 
+### ⚠️ Important!
+If your context get's updated constantly, then the context that you used in the `context` parammeter of OptionsController can became deprecated and no more longer valid. So you need to update it. You can do this by calling the `updateContext(context)` function of your controller in the build method of your statefull widget, for exemple.<br>
+This is not a problem if you never rebuild the widget and the context never get's deprecated.
+Bellow is a visual exemple:
+```dart
+@override
+Widget build(BuildContext context) {
+  // Add this line in your build method of the statefull
+  // widget the textfield will be contained at:
+  optionsController.updateContext(context); 
+ 
+  return ... // Your widget
+}
+```
+
 ## About generic type \<T> of OptionsController
 The OptionsController receives a generic T value. This can be any model, but if you just want
 to add in the cursor a text you can use \<String> as the generic type.

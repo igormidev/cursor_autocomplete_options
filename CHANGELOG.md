@@ -1,3 +1,8 @@
+## [1.2.4] 26-10-2023
+* OptionsController documentation created
+* OverlayChoicesListViewWidget documentation created
+* README added updateContext how-to-use documentation
+
 ## [1.2.3] 26-10-2023
 * Readme html bug fix
 

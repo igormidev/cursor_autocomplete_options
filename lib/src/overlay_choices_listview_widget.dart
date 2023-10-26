@@ -3,14 +3,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class OverlayChoicesListViewWidget<T> extends StatefulWidget {
+  /// The focus node of the overlay to focus in it
   final FocusNode focusNode;
+
+  /// The top position of the overlay in the screen.
+  /// Will be used a [Positioned] widget. And this atribute
+  /// will be used as the [Positioned.top] parametter.
   final double top;
+
+  /// The left position of the overlay in the screen.
+  /// Will be used a [Positioned] widget. And this atribute
+  /// will be used as the [Positioned.left] parametter.
   final double left;
+
+  /// The height of the overlay card  that the options will be displayed.
   final double height;
+
+  /// The width of the overlay card that the options will be displayed.
   final double width;
+
+  /// The options that will be displayed in the overlay.
   final List<T> options;
+
+  /// {@macro optionAsString}
   final String Function(T option) optionAsString;
+
+  /// The callback that will be called when the user select an option.
   final void Function(T option) onSelect;
+
+  /// The callback that will be called when the user close the overlay.
   final void Function() onClose;
 
   const OverlayChoicesListViewWidget({
