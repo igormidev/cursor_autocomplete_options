@@ -1,3 +1,6 @@
+## [1.2.2] 26-10-2023
+* Readme update
+
 ## [1.2.1] 26-10-2023
 * Live demo uploaded
 
