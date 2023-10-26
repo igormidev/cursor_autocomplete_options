@@ -5,14 +5,14 @@ For that reason this package has been made. To give the possibility to display a
 cursor indicator with each autocompletion option in a list tile displayed in a overlay. 
 
 ## 🌟 Test the live demo!
-[Test the package in a online web demo:](https://igormidev.github.io/cursor_autocomplete_options)
+<b>[Test the package in a online web demo:](https://igormidev.github.io/cursor_autocomplete_options)</b><br>
 [https://igormidev.github.io/cursor_autocomplete_options](https://igormidev.github.io/cursor_autocomplete_options)
 
 # Getting started
 
 ## First, import the pacakge:
 ```dart
-import 'package:flutter_fancy_tree_view/flutter_fancy_tree_view.dart';
+import 'package:cursor_autocomplete_options/cursor_autocomplete_options.dart';
 ```
 
 ## Setting variables
@@ -96,20 +96,20 @@ You can trigger it, for example, when the user types "#" in the textfield. But t
 
 ```dart
 TextFormField(
-    ... // Other atributes
-    onChanged: (value) {
-        if (value.isEmpty) return;
-        final cursorPositionIndex =
-            textEditingController.selection.base.offset;
+  ... // Other atributes
+  onChanged: (value) {
+    if (value.isEmpty) return;
+    final cursorPositionIndex =
+      textEditingController.selection.base.offset;
 
-        final typedValue = value[cursorPositionIndex - 1];
+    final typedValue = value[cursorPositionIndex - 1];
 
-        final isTypedCaracterHashtag = typedValue == '#';
+    final isTypedCaracterHashtag = typedValue == '#';
 
-        if (isTypedCaracterHashtag) {
-            optionsController.showOptionsMenu(suggestion);
-        }
-    },
+    if (isTypedCaracterHashtag) {
+      optionsController.showOptionsMenu(suggestion);
+    }
+  },
 )
 ```
 
