@@ -1,5 +1,8 @@
+## [1.2.3] 26-10-2023
+* Readme html bug fix
+
 ## [1.2.2] 26-10-2023
-* Readme update
+* Readme improvement
 
 ## [1.2.1] 26-10-2023
 * Live demo uploaded
