@@ -45,12 +45,12 @@ void initState() {
 }
 ```
 
-## About generic type <T> of OptionsController
+## About generic type \<T> of OptionsController
 The OptionsController receives a generic T value. This can be any model, but if you just want
-to add in the cursor a text you can use <String> as the generic type.
+to add in the cursor a text you can use \<String> as the generic type.
 
 ### ⚠️ Important!
-If the <T> is *diferent of String*, you need to pass the field `optionAsString` to cast it into a String. So this parameter becomes mandatory if you are not using <String> as the generic type. Otherwise, if the generic type is <String>, you don't need to pass this parametter because the package already know it's is a string.
+If the \<T> is *diferent of String*, you need to pass the field `optionAsString` to cast it into a String. So this parameter becomes mandatory if you are not using \<String> as the generic type. Otherwise, if the generic type is \<String>, you don't need to pass this parametter because the package already know it's is a string.
 
 ## Now, you can use the textfield with the values we created:
 
@@ -88,7 +88,7 @@ You can trigger to show the dialog in the following cursor when ever you wan't.
 Remember that the textfield has to be focused in order to the package reconize the cursor and it's location. For that the package will the focus node of the textfield to see if it is focused.
 
 To trigger the overlay to appear with the options, you will call the funcion `showOptionsMenu()` in your OptionsController controller passing the list of options that you wan't
-to give to the user. This function will receive the suggestion parameters that is a list of items of the type <T>, the same type of your OptionController<T>.
+to give to the user. This function will receive the suggestion parameters that is a list of items of the type \<T>, the same type of your OptionController\<T>.
 
 After the showOptionsMenu() function is trigged, it will show the dialog with the options and then, after the user select's the option, the app will trigger both functions `onSelectedOption` and `onSelectInsertInCursor` (the one's that are not null).
 
