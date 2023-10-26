@@ -1,5 +1,26 @@
 import 'package:cursor_autocomplete_options/cursor_autocomplete_options.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+      ),
+      home: const Example(),
+    );
+  }
+}
 
 class Example extends StatefulWidget {
   const Example({super.key});
@@ -209,6 +230,9 @@ class _ChangeFieldsState extends State<ChangeFields> {
                     ? 'Need to be a number bigger then 150'
                     : null;
               },
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.digitsOnly
+              ],
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
               ),
