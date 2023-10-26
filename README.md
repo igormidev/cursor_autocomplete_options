@@ -4,6 +4,10 @@ That's because the autocomplete section is bellow the textfield and we can't cha
 For that reason this package has been made. To give the possibility to display a listview of options right bellow the
 cursor indicator with each autocompletion option in a list tile displayed in a overlay. 
 
+## 🌟 Test the live demo!
+[Test the package in a online web demo:](https://igormidev.github.io/cursor_autocomplete_options)
+[https://igormidev.github.io/cursor_autocomplete_options](https://igormidev.github.io/cursor_autocomplete_options)
+
 # Getting started
 
 ## First, import the pacakge:

@@ -1,3 +1,6 @@
+## [1.2.1] 26-10-2023
+* Live demo uploaded
+
 ## [1.2.0] 26-10-2023
 * Mobile scroll fix
 * Mobile full suport
