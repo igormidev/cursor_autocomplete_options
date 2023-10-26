@@ -151,6 +151,15 @@ final List<String> suggestion = [
   'Lerolero',
   'Idensa',
   'Yaha',
+  'Tysaki',
+  'Ruyma',
+  'Rolmuro',
+  'Ehuka',
+  'Yah',
+  'Higidi',
+  'Dwsuai',
+  'Yuai',
+  'Lema',
 ];
 
 enum AlignmentOptions {

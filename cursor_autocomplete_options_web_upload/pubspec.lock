@@ -50,13 +50,13 @@ packages:
     source: hosted
     version: "1.0.6"
   cursor_autocomplete_options:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: cursor_autocomplete_options
-      sha256: "24e62f926155a5a8b31d2d01829416839990f81a82e138029f4f96f972ee0685"
+      sha256: d68dc393ce1b4774fc6ad60868b3f0867ab81cce1dd7b2c4d95e47885a843520
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.2.1"
   fake_async:
     dependency: transitive
     description:
