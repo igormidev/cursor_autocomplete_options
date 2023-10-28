@@ -1,3 +1,9 @@
+## [1.3.0] 28-10-2023
+#### ⚠️ Warning: Change of onSelectInsertInCursor function.
+* `InsertInCursorPayload` created and added as response to `onSelectInsertInCursor` with the goal of giving more controll of what will be inserted and what will happend with the cursor after inserting it.
+* `overlay` parameter added to OptionsController to give a option of the user to pass his own OverlayState.
+* `tileHeight` parameter added to OptionsController to give the option to change the height of each option tile in the listview.
+
 ## [1.2.4] 26-10-2023
 * OptionsController documentation created
 * OverlayChoicesListViewWidget documentation created

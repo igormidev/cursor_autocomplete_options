@@ -34,6 +34,9 @@ class OverlayChoicesListViewWidget<T> extends StatefulWidget {
   /// The callback that will be called when the user close the overlay.
   final void Function() onClose;
 
+  /// The height of each tile in the overlay.
+  final double tileHeight;
+
   const OverlayChoicesListViewWidget({
     super.key,
     required this.focusNode,
@@ -45,6 +48,7 @@ class OverlayChoicesListViewWidget<T> extends StatefulWidget {
     required this.optionAsString,
     required this.onSelect,
     required this.onClose,
+    this.tileHeight = 36,
   });
 
   @override
@@ -73,7 +77,7 @@ class _OverlayChoicesListViewWidgetState<T>
     });
     scrollDownDuration = const Duration(milliseconds: 40);
 
-    final totalItensHeight = widget.options.length * 36;
+    final totalItensHeight = widget.options.length * widget.tileHeight;
     final isTotalItemHeightBiggerThanHeight = totalItensHeight > widget.height;
 
     if (isTotalItemHeightBiggerThanHeight) {
@@ -149,7 +153,7 @@ class _OverlayChoicesListViewWidgetState<T>
                             Radius.circular(20),
                           ),
                           child: SizedBox(
-                            height: 36,
+                            height: widget.tileHeight,
                             child: ListTile(
                               onTap: () {
                                 widget.onSelect(option);
@@ -220,7 +224,8 @@ class _OverlayChoicesListViewWidgetState<T>
   /// So we will focus in the neerest element in the screen.
   void _changeSelectedTileIfNotDisplayed(_ChangeTileDirection type) {
     final currentOffset = scrollController.offset;
-    final currentTileSelectedStartPosition = selectedItemIndex * 36;
+    final currentTileSelectedStartPosition =
+        selectedItemIndex * widget.tileHeight;
 
     final isCurrentTileDisplayedInScreen =
         currentTileSelectedStartPosition >= currentOffset &&
@@ -230,7 +235,8 @@ class _OverlayChoicesListViewWidgetState<T>
       listViewFocusNodes[selectedItemIndex]?.unfocus();
       final heightPadding =
           type == _ChangeTileDirection.down ? 0 : widget.height;
-      final double clossetsValue = (currentOffset + heightPadding - 1) / 36;
+      final double clossetsValue =
+          (currentOffset + heightPadding - 1) / widget.tileHeight;
       final int clossetsValueInt = clossetsValue.round();
       listViewFocusNodes[clossetsValueInt]?.requestFocus();
       selectedItemIndex = clossetsValueInt;
@@ -260,7 +266,7 @@ class _OverlayChoicesListViewWidgetState<T>
 
         scrollController
             .animateTo(
-              currentOffset - 36,
+              currentOffset - widget.tileHeight,
               duration: scrollDownDuration,
               curve: Curves.linear,
             )
@@ -279,7 +285,7 @@ class _OverlayChoicesListViewWidgetState<T>
 
         scrollController
             .animateTo(
-              currentOffset + 36,
+              currentOffset + widget.tileHeight,
               duration: scrollDownDuration,
               curve: Curves.linear,
             )

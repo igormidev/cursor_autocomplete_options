@@ -1,4 +1,5 @@
 import 'package:cursor_autocomplete_options/cursor_autocomplete_options.dart';
+import 'package:cursor_autocomplete_options/src/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -16,6 +17,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
+        textSelectionTheme: const TextSelectionThemeData(
+          selectionHandleColor: Colors.transparent,
+        ),
       ),
       home: const Example(),
     );
@@ -43,7 +47,7 @@ class _ExampleState extends State<Example> {
       textEditingController: textEditingController,
       context: context,
       onSelectInsertInCursor: (option) {
-        return option;
+        return InsertInCursorPayload(text: option);
       },
     );
   }

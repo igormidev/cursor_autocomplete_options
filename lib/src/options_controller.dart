@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cursor_autocomplete_options/src/debouncer.dart';
+import 'package:cursor_autocomplete_options/src/models.dart';
 import 'package:cursor_autocomplete_options/src/overlay_choices_listview_widget.dart';
 import 'package:flutter/material.dart';
 
@@ -47,6 +48,11 @@ import 'package:flutter/material.dart';
 /// This is a pre-built option builded above onSelectedOption
 /// that manipulate the TextEditingController in order to
 /// insert in the current cursor possition the return of this function.
+///
+/// The return of this function is a [InsertInCursorPayload] that
+/// contains the text to be inserted and the cursor position change
+/// after the insertion. See `InsertInCursorPayload` documentation
+/// for more.
 /// {@endtemplate}
 
 class OptionsController<T> {
@@ -58,9 +64,6 @@ class OptionsController<T> {
 
   /// This focus node will be used to listen to the keyboard events.
   final FocusNode keyboardListenerNode;
-
-  // The overlay state that will be used to display the options.
-  final OverlayState _overlayState;
 
   /// The overlay entry that will be used to display the options.
   OverlayEntry? _suggestionTagoverlayEntry;
@@ -81,7 +84,7 @@ class OptionsController<T> {
   FutureOr<void> Function(T option)? onSelectedOption;
 
   /// {@macro onSelectInsertInCursor}
-  FutureOr<String> Function(T option)? onSelectInsertInCursor;
+  FutureOr<InsertInCursorPayload> Function(T option)? onSelectInsertInCursor;
 
   /// {@macro willAutomaticallyCloseDialogAfterSelection}
   bool willAutomaticallyCloseDialogAfterSelection;
@@ -98,6 +101,12 @@ class OptionsController<T> {
 
   /// {@macro context}
   BuildContext _context;
+
+  /// The overlay will be used to display the options.
+  OverlayState? overlay;
+
+  /// The height of each tile in the overlay.
+  final double tileHeight;
 
   /// # OptionsController
   /// Will controll when and where to display the overlay card with
@@ -116,6 +125,8 @@ class OptionsController<T> {
   /// {@macro overlayCardWeight}
   /// - [debounceDuration]<br>
   /// Debouncer time of the widget.
+  /// - [tileHeight]<br>
+  /// The height of each tile in the overlay.
   /// - [willAutomaticallyCloseDialogAfterSelection]<br>
   /// {@macro willAutomaticallyCloseDialogAfterSelection}
   /// - [optionAsString]<br>
@@ -135,8 +146,9 @@ class OptionsController<T> {
     this.optionAsString,
     this.onSelectedOption,
     this.onSelectInsertInCursor,
+    this.overlay,
+    this.tileHeight = 36,
   })  : _textEditingController = textEditingController,
-        _overlayState = Overlay.of(context),
         _debouncer = Debouncer(timerDuration: debounceDuration),
         keyboardListenerNode = FocusNode(),
         _context = context,
@@ -161,10 +173,12 @@ class OptionsController<T> {
   /// call to avoid multiple calls in a short period of time.
   /// The debounce timmer can be setted in the constructor.
   void showOptionsMenu(List<T> options) {
+    if (options.isEmpty) return;
     _debouncer.resetDebounce(() {
       _setOverlayEntry(options);
       if (_suggestionTagoverlayEntry != null) {
-        _overlayState.insert(_suggestionTagoverlayEntry!);
+        final OverlayState overlay = this.overlay ?? Overlay.of(_context);
+        overlay.insert(_suggestionTagoverlayEntry!);
       }
     });
   }
@@ -192,9 +206,11 @@ class OptionsController<T> {
 
     textfieldFocusNode.unfocus();
     keyboardListenerNode.requestFocus();
+
     _suggestionTagoverlayEntry = OverlayEntry(
       builder: (context) {
         return OverlayChoicesListViewWidget<T>(
+          tileHeight: tileHeight,
           width: overlayCardWeight,
           height: overlayCardHeight,
           focusNode: keyboardListenerNode,
@@ -225,17 +241,20 @@ class OptionsController<T> {
   }
 
   Future<void> _manegeSelectedText(T option) async {
-    final selectedText = await onSelectInsertInCursor?.call(option);
-    if (selectedText == null) return;
+    final selectedTextPayload = await onSelectInsertInCursor?.call(option);
+    if (selectedTextPayload == null) return;
+
     final TextEditingValue tev = _textEditingController.value;
     final int cursorPos = tev.selection.base.offset;
 
+    final String selectedText = selectedTextPayload.text;
     final String prefixText = tev.text.substring(0, cursorPos);
     final String suffixText = tev.text.substring(cursorPos);
     final String newTextWithInsertedOption =
         prefixText + selectedText + suffixText;
 
-    final int selectedTextLenght = selectedText.length;
+    final cursorChange = selectedTextPayload.cursorIndexChangeQuantity;
+    final int selectedTextLenght = selectedText.length + cursorChange;
 
     final newSelection = TextSelection(
       baseOffset: cursorPos + selectedTextLenght,
@@ -270,6 +289,7 @@ class OptionsController<T> {
     TextSpan? span;
     int? maxLines;
     Size? textFieldValidTextSize;
+
     _recursiveSearchForRender(
       context: _context,
       onTextfieldFound: (textfield, size) {
