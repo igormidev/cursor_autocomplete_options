@@ -1,4 +1,7 @@
-## [1.3.0] 28-10-2023
+## [1.3.1] 28-10-2023
+* Added `InsertInCursorPayload` to public api's
+* README updated onSelectInsertInCursor to include InsertInCursorPayload mention
+
 #### ⚠️ Warning: Change of onSelectInsertInCursor function.
 * `InsertInCursorPayload` created and added as response to `onSelectInsertInCursor` with the goal of giving more controll of what will be inserted and what will happend with the cursor after inserting it.
 * `overlay` parameter added to OptionsController to give a option of the user to pass his own OverlayState.

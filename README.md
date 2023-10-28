@@ -138,7 +138,7 @@ You can manipulate and determine what will be done with the selection with two m
 Will give you complete controll of what to do with the selected option. So if you want you can manipulate the textfield values yourself.
 
 ## onSelectInsertInCursor
-This is a pre-built option builded above onSelectedOption that manipulate the TextEditingController in order to insert in the current cursor possition the return of this function.
+This is a pre-built option builded above onSelectedOption that manipulate the TextEditingController in order to insert in the current cursor possition the return of this function. Also, you can change the position of the cursor after adding the text with the passing a `cursorIndexChangeQuantity` in the return payload. Check the `InsertInCursorPayload` for more info.
 
 # Configurations
 
