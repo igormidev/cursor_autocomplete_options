@@ -130,6 +130,11 @@ TextFormField(
 
 > You can see this full exemple by [clicking here](https://pub.dev/packages/cursor_autocomplete_options/example)
 
+
+# Customize the card widget
+Want to customize your card widget?
+Use `showOptionsMenuWithWrapperBuilder` and create a wrapper above the Listview with the ListTiles with the options.
+
 # Manipulating selections
 You can manipulate and determine what will be done with the selection with two major functions: `onSelectedOption` and `onSelectInsertInCursor`.
 > We don't recommend to use both of them, but technically there is no problem in using both.

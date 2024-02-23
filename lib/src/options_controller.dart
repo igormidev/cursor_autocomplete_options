@@ -175,12 +175,83 @@ class OptionsController<T> {
   void showOptionsMenu(List<T> options) {
     if (options.isEmpty) return;
     _debouncer.resetDebounce(() {
+      _setDialogsBindings();
       _setOverlayEntry(options);
       if (_suggestionTagoverlayEntry != null) {
         final OverlayState overlay = this.overlay ?? Overlay.of(_context);
         overlay.insert(_suggestionTagoverlayEntry!);
       }
     });
+  }
+
+  /// Will display the custom widget that you wan't.
+  /// Provide the widget you wan't to build in the [litsTileWithOptionsBuilder] return.
+  ///
+  /// If inside of your widget you wan't to show the normal Listview with the
+  /// ListTile's containing the options, use [listTilesWithOptionsBuilder] with
+  /// the options and you will have the default widget.
+  void showOptionsMenuWithWrapperBuilder({
+    required Widget Function(
+      BuildContext context,
+      Widget Function(List<T> options) listTilesWithOptionsBuilder,
+    ) suggestionCardBuilder,
+  }) {
+    _debouncer.resetDebounce(() {
+      _setDialogsBindings();
+      _suggestionTagoverlayEntry = OverlayEntry(
+        builder: (context) {
+          return Positioned(
+            left: _leftMarginOffset,
+            top: _bottomMarginOffset,
+            child: SizedBox(
+              width: overlayCardWeight,
+              height: overlayCardHeight,
+              child: Material(
+                borderRadius: const BorderRadius.all(Radius.circular(20)),
+                elevation: 0,
+                color: Colors.grey[300],
+                child: suggestionCardBuilder(
+                  context,
+                  _buildChoicesWidget,
+                ),
+              ),
+            ),
+          );
+        },
+      );
+      if (_suggestionTagoverlayEntry != null) {
+        final OverlayState overlay = this.overlay ?? Overlay.of(_context);
+        overlay.insert(_suggestionTagoverlayEntry!);
+      }
+    });
+  }
+
+  Widget _buildChoicesWidget(List<T> options) {
+    return OverlayChoicesListViewWidget<T>(
+      tileHeight: tileHeight,
+      width: overlayCardWeight,
+      height: overlayCardHeight,
+      focusNode: keyboardListenerNode,
+      options: options,
+      optionAsString: (option) {
+        if (optionAsString != null) {
+          return optionAsString!.call(option);
+        } else {
+          return option as String;
+        }
+      },
+      onSelect: (T option) async {
+        await onSelectedOption?.call(option);
+        if (onSelectInsertInCursor != null) {
+          await _manegeSelectedText(option);
+        }
+
+        if (willAutomaticallyCloseDialogAfterSelection) {
+          closeOverlayIfOpen();
+        }
+      },
+      onClose: closeOverlayIfOpen,
+    );
   }
 
   /// Will dispose the controller resources and remove the overlay if it is open.
@@ -201,40 +272,29 @@ class OptionsController<T> {
     textfieldFocusNode.requestFocus();
   }
 
-  void _setOverlayEntry(List<T> options) {
+  void _setDialogsBindings() {
     _displayWidgetInCursorPosition(_textEditingController.value);
 
     textfieldFocusNode.unfocus();
     keyboardListenerNode.requestFocus();
+  }
 
+  void _setOverlayEntry(List<T> options) {
     _suggestionTagoverlayEntry = OverlayEntry(
       builder: (context) {
-        return OverlayChoicesListViewWidget<T>(
-          tileHeight: tileHeight,
-          width: overlayCardWeight,
-          height: overlayCardHeight,
-          focusNode: keyboardListenerNode,
-          options: options,
-          optionAsString: (option) {
-            if (optionAsString != null) {
-              return optionAsString!.call(option);
-            } else {
-              return option as String;
-            }
-          },
-          onSelect: (T option) async {
-            await onSelectedOption?.call(option);
-            if (onSelectInsertInCursor != null) {
-              await _manegeSelectedText(option);
-            }
-
-            if (willAutomaticallyCloseDialogAfterSelection) {
-              closeOverlayIfOpen();
-            }
-          },
-          onClose: closeOverlayIfOpen,
+        return Positioned(
           left: _leftMarginOffset,
           top: _bottomMarginOffset,
+          child: SizedBox(
+            width: overlayCardWeight,
+            height: overlayCardHeight,
+            child: Material(
+              borderRadius: const BorderRadius.all(Radius.circular(20)),
+              elevation: 0,
+              color: Colors.grey[300],
+              child: _buildChoicesWidget(options),
+            ),
+          ),
         );
       },
     );

@@ -1,3 +1,6 @@
+## [1.4.0] 23-02-2024
+* Added possibility to customize card and create a wrapper above the listview with the listtiles of the options.
+
 ## [1.3.1] 28-10-2023
 * Added `InsertInCursorPayload` to public api's
 * README updated onSelectInsertInCursor to include InsertInCursorPayload mention

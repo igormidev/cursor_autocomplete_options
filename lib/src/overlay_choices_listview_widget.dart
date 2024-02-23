@@ -6,16 +6,6 @@ class OverlayChoicesListViewWidget<T> extends StatefulWidget {
   /// The focus node of the overlay to focus in it
   final FocusNode focusNode;
 
-  /// The top position of the overlay in the screen.
-  /// Will be used a [Positioned] widget. And this atribute
-  /// will be used as the [Positioned.top] parametter.
-  final double top;
-
-  /// The left position of the overlay in the screen.
-  /// Will be used a [Positioned] widget. And this atribute
-  /// will be used as the [Positioned.left] parametter.
-  final double left;
-
   /// The height of the overlay card  that the options will be displayed.
   final double height;
 
@@ -40,8 +30,6 @@ class OverlayChoicesListViewWidget<T> extends StatefulWidget {
   const OverlayChoicesListViewWidget({
     super.key,
     required this.focusNode,
-    required this.top,
-    required this.left,
     required this.height,
     required this.width,
     required this.options,
@@ -98,80 +86,67 @@ class _OverlayChoicesListViewWidgetState<T>
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      top: widget.top,
-      left: widget.left,
-      child: SizedBox(
-        height: height,
-        width: widget.width,
-        child: FocusScope(
-          autofocus: true,
-          child: Shortcuts(
-            shortcuts: _noIntent,
-            child: TapRegion(
-              onTapOutside: (event) {
-                widget.focusNode.unfocus();
-                widget.onClose();
-              },
-              child: RawKeyboardListener(
-                focusNode: widget.focusNode,
-                onKey: (event) {
-                  _manegeKeyboardClicked(event);
-                },
-                child: Material(
-                  borderRadius: const BorderRadius.all(Radius.circular(20)),
-                  elevation: 0,
-                  color: Colors.grey[300],
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(20)),
-                    child: ListView.builder(
-                      padding: EdgeInsets.zero,
-                      itemCount: widget.options.length,
-                      controller: scrollController,
-                      itemBuilder: (context, index) {
-                        final T option = widget.options.elementAt(index);
-                        final focusNode = listViewFocusNodes[index];
-                        final isFirst = index == 0;
-                        final isLast = index == widget.options.length - 1;
-                        final BorderRadius borderRaius;
-                        if (isFirst) {
-                          borderRaius = const BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            topRight: Radius.circular(20),
-                          );
-                        } else if (isLast) {
-                          borderRaius = const BorderRadius.only(
-                            bottomLeft: Radius.circular(20),
-                            bottomRight: Radius.circular(20),
-                          );
-                        } else {
-                          borderRaius = const BorderRadius.only();
-                        }
+    return FocusScope(
+      autofocus: true,
+      child: Shortcuts(
+        shortcuts: _noIntent,
+        child: TapRegion(
+          onTapOutside: (event) {
+            widget.focusNode.unfocus();
+            widget.onClose();
+          },
+          child: RawKeyboardListener(
+            focusNode: widget.focusNode,
+            onKey: (event) {
+              _manegeKeyboardClicked(event);
+            },
+            child: ClipRRect(
+              borderRadius: const BorderRadius.all(Radius.circular(20)),
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: widget.options.length,
+                controller: scrollController,
+                itemBuilder: (context, index) {
+                  final T option = widget.options.elementAt(index);
+                  final focusNode = listViewFocusNodes[index];
+                  final isFirst = index == 0;
+                  final isLast = index == widget.options.length - 1;
+                  final BorderRadius borderRaius;
+                  if (isFirst) {
+                    borderRaius = const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    );
+                  } else if (isLast) {
+                    borderRaius = const BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    );
+                  } else {
+                    borderRaius = const BorderRadius.only();
+                  }
 
-                        return ClipRRect(
-                          borderRadius: const BorderRadius.all(
-                            Radius.circular(20),
-                          ),
-                          child: SizedBox(
-                            height: widget.tileHeight,
-                            child: ListTile(
-                              onTap: () {
-                                widget.onSelect(option);
-                              },
-                              shape: RoundedRectangleBorder(
-                                borderRadius: borderRaius,
-                              ),
-                              autofocus: false,
-                              dense: true,
-                              focusNode: focusNode,
-                              title: Text(widget.optionAsString(option)),
-                            ),
-                          ),
-                        );
-                      },
+                  return ClipRRect(
+                    borderRadius: const BorderRadius.all(
+                      Radius.circular(20),
                     ),
-                  ),
-                ),
+                    child: SizedBox(
+                      height: widget.tileHeight,
+                      child: ListTile(
+                        onTap: () {
+                          widget.onSelect(option);
+                        },
+                        shape: RoundedRectangleBorder(
+                          borderRadius: borderRaius,
+                        ),
+                        autofocus: false,
+                        dense: true,
+                        focusNode: focusNode,
+                        title: Text(widget.optionAsString(option)),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ),
