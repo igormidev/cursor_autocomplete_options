@@ -38,7 +38,7 @@ void initState() {
     textfieldFocusNode: textfieldFocusNode,
     textEditingController: textEditingController,
     context: context,
-    onSelectInsertInCursor: (option) {
+    selectInCursorParser: (option) {
       return option;
     },
   );
@@ -105,7 +105,7 @@ Remember that the textfield has to be focused in order to the package reconize t
 To trigger the overlay to appear with the options, you will call the funcion `showOptionsMenu()` in your OptionsController controller passing the list of options that you wan't
 to give to the user. This function will receive the suggestion parameters that is a list of items of the type \<T>, the same type of your OptionController\<T>.
 
-After the showOptionsMenu() function is trigged, it will show the dialog with the options and then, after the user select's the option, the app will trigger both functions `onSelectedOption` and `onSelectInsertInCursor` (the one's that are not null).
+After the showOptionsMenu() function is trigged, it will show the dialog with the options and then, after the user select's the option, the app will trigger both functions `onTextAddedCallback` and `selectInCursorParser` (the one's that are not null).
 
 You can trigger it, for example, when the user types "#" in the textfield. But this is totally open for you about when to trigger it. Bellow is a example of this case:
 
@@ -136,14 +136,14 @@ Want to customize your card widget?
 Use `showOptionsMenuWithWrapperBuilder` and create a wrapper above the Listview with the ListTiles with the options.
 
 # Manipulating selections
-You can manipulate and determine what will be done with the selection with two major functions: `onSelectedOption` and `onSelectInsertInCursor`.
+You can manipulate and determine what will be done with the selection with two major functions: `onTextAddedCallback` and `selectInCursorParser`.
 > We don't recommend to use both of them, but technically there is no problem in using both.
 
-## onSelectedOption
+## onTextAddedCallback
 Will give you complete controll of what to do with the selected option. So if you want you can manipulate the textfield values yourself.
 
-## onSelectInsertInCursor
-This is a pre-built option builded above onSelectedOption that manipulate the TextEditingController in order to insert in the current cursor possition the return of this function. Also, you can change the position of the cursor after adding the text with the passing a `cursorIndexChangeQuantity` in the return payload. Check the `InsertInCursorPayload` for more info.
+## selectInCursorParser
+This is a pre-built option builded above onTextAddedCallback that manipulate the TextEditingController in order to insert in the current cursor possition the return of this function. Also, you can change the position of the cursor after adding the text with the passing a `cursorIndexChangeQuantity` in the return payload. Check the `InsertInCursorPayload` for more info.
 
 # Configurations
 
@@ -154,7 +154,7 @@ Inside the `OptionsController`, you can manipulate the **width** and **height** 
 You can configure a debouncer in the trigger of the options overlay. The default is 300ms.
 
 ## Controll when to close dialog
-Maybe, you don't want to close the dialog after doing your login in `onSelectedOption` or `onSelectInsertInCursor`. So you can set the `willAutomaticallyCloseDialogAfterSelection` field to false and the dialog will stop closing after selecting a value.
+Maybe, you don't want to close the dialog after doing your login in `onTextAddedCallback` or `selectInCursorParser`. So you can set the `willAutomaticallyCloseDialogAfterSelection` field to false and the dialog will stop closing after selecting a value.
 
 ---
 Made with ❤ by [Igor Miranda](https://github.com/igormidev) <br>

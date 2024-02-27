@@ -39,20 +39,18 @@ import 'package:flutter/material.dart';
 /// how to display the option as a String and it uses this function for that.
 /// {@endtemplate}
 
-/// {@template onSelectedOption}
-/// Will give you complete controll of what to do with the selected
-/// option. So if you want you can manipulate the textfield values yourself.
-/// {@endtemplate}
-
-/// {@template onSelectInsertInCursor}
-/// This is a pre-built option builded above onSelectedOption
-/// that manipulate the TextEditingController in order to
+/// {@template selectInCursorParser}
+/// This is a pre-built option that manipulate the TextEditingController in order to
 /// insert in the current cursor possition the return of this function.
 ///
 /// The return of this function is a [InsertInCursorPayload] that
 /// contains the text to be inserted and the cursor position change
 /// after the insertion. See `InsertInCursorPayload` documentation
 /// for more.
+/// {@endtemplate}
+
+/// {@template onTextAddedCallback}
+/// Will call this callback after inserting the selected text in the cursor.
 /// {@endtemplate}
 
 class OptionsController<T> {
@@ -80,11 +78,8 @@ class OptionsController<T> {
   /// Debouncer time of the widget
   final Debouncer _debouncer;
 
-  /// {@macro onSelectedOption}
-  FutureOr<void> Function(T option)? onSelectedOption;
-
-  /// {@macro onSelectInsertInCursor}
-  FutureOr<InsertInCursorPayload> Function(T option)? onSelectInsertInCursor;
+  /// {@macro selectInCursorParser}
+  FutureOr<InsertInCursorPayload> Function(T option)? selectInCursorParser;
 
   /// {@macro willAutomaticallyCloseDialogAfterSelection}
   bool willAutomaticallyCloseDialogAfterSelection;
@@ -107,6 +102,12 @@ class OptionsController<T> {
 
   /// The height of each tile in the overlay.
   final double tileHeight;
+
+  /// {@macro onTextAddedCallback}
+  final FutureOr<void> Function(
+    T option,
+    TextEditingValue newEditingValue,
+  )? onTextAddedCallback;
 
   /// # OptionsController
   /// Will controll when and where to display the overlay card with
@@ -131,10 +132,10 @@ class OptionsController<T> {
   /// {@macro willAutomaticallyCloseDialogAfterSelection}
   /// - [optionAsString]<br>
   /// {@macro optionAsString}
-  /// - [onSelectedOption]<br>
-  /// {@macro onSelectedOption}
-  /// - [onSelectInsertInCursor]<br>
-  /// {@macro onSelectInsertInCursor}
+  /// - [selectInCursorParser]<br>
+  /// {@macro selectInCursorParser}
+  /// - [onTextAddedCallback]<br>
+  /// {@macro onTextAddedCallback}
   OptionsController({
     required this.textfieldFocusNode,
     required ValueNotifier<TextEditingValue> textEditingController,
@@ -144,10 +145,10 @@ class OptionsController<T> {
     Duration debounceDuration = const Duration(milliseconds: 300),
     this.willAutomaticallyCloseDialogAfterSelection = true,
     this.optionAsString,
-    this.onSelectedOption,
-    this.onSelectInsertInCursor,
+    this.selectInCursorParser,
     this.overlay,
     this.tileHeight = 36,
+    this.onTextAddedCallback,
   })  : _textEditingController = textEditingController,
         _debouncer = Debouncer(timerDuration: debounceDuration),
         keyboardListenerNode = FocusNode(),
@@ -241,10 +242,11 @@ class OptionsController<T> {
         }
       },
       onSelect: (T option) async {
-        await onSelectedOption?.call(option);
-        if (onSelectInsertInCursor != null) {
-          await _manegeSelectedText(option);
-        }
+        final selectInCursor = await selectInCursorParser?.call(option) ??
+            InsertInCursorPayload(
+              text: optionAsString?.call(option) ?? option.toString(),
+            );
+        await _manegeSelectedText(option, selectInCursor);
 
         if (willAutomaticallyCloseDialogAfterSelection) {
           closeOverlayIfOpen();
@@ -300,10 +302,10 @@ class OptionsController<T> {
     );
   }
 
-  Future<void> _manegeSelectedText(T option) async {
-    final selectedTextPayload = await onSelectInsertInCursor?.call(option);
-    if (selectedTextPayload == null) return;
-
+  Future<void> _manegeSelectedText(
+    T option,
+    InsertInCursorPayload selectedTextPayload,
+  ) async {
     final TextEditingValue tev = _textEditingController.value;
     final int cursorPos = tev.selection.base.offset;
 
@@ -339,6 +341,8 @@ class OptionsController<T> {
     );
 
     _textEditingController.value = newEditingValue;
+
+    onTextAddedCallback?.call(option, newEditingValue);
   }
 
   void _displayWidgetInCursorPosition(TextEditingValue currentEditingValue) {

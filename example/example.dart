@@ -1,5 +1,4 @@
 import 'package:cursor_autocomplete_options/cursor_autocomplete_options.dart';
-import 'package:cursor_autocomplete_options/src/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -46,7 +45,7 @@ class _ExampleState extends State<Example> {
       textfieldFocusNode: textfieldFocusNode,
       textEditingController: textEditingController,
       context: context,
-      onSelectInsertInCursor: (option) {
+      selectInCursorParser: (option) {
         return InsertInCursorPayload(text: option);
       },
     );
