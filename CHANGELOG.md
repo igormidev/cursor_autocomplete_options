@@ -1,3 +1,7 @@
+## [1.6.0] 31-08-2024
+* Added searchbar to facilitate find the target item
+* Using Material Theme on dialog components for colors instead of static fixed colors
+
 ## [1.5.0] 23-02-2024
 * Added `onTextAddedCallback`.
 * Rename `onSelectInsertInCursor` to `selectInCursorParser`
