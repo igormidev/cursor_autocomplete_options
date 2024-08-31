@@ -1,4 +1,6 @@
 import 'package:cursor_autocomplete_options/src/extensions.dart';
+import 'package:cursor_autocomplete_options/src/helpers/text_normalizer.dart';
+import 'package:cursor_autocomplete_options/src/widgets/search_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -46,15 +48,22 @@ class OverlayChoicesListViewWidget<T> extends StatefulWidget {
 
 class _OverlayChoicesListViewWidgetState<T>
     extends State<OverlayChoicesListViewWidget<T>> {
+  late final TextEditingController searchController;
   int selectedItemIndex = 0;
+  final FocusNode searchFocusNode = FocusNode();
   Map<int, FocusNode> listViewFocusNodes = {};
   final ScrollController scrollController = ScrollController();
   late final Duration scrollDownDuration;
   late final double height;
 
+  late final ValueNotifier<List<T>> optionsVN;
+
   @override
   void initState() {
     super.initState();
+    searchController = TextEditingController();
+    optionsVN = ValueNotifier(widget.options);
+
     widget.focusNode.requestFocus();
     widget.options.forEachMapper((value, isFirst, isLast, index) {
       listViewFocusNodes[index] = FocusNode();
@@ -77,6 +86,7 @@ class _OverlayChoicesListViewWidgetState<T>
 
   @override
   void dispose() {
+    searchController.dispose();
     listViewFocusNodes.forEach((key, focusNode) {
       focusNode.dispose();
     });
@@ -95,58 +105,89 @@ class _OverlayChoicesListViewWidgetState<T>
             widget.focusNode.unfocus();
             widget.onClose();
           },
-          child: RawKeyboardListener(
+          child: KeyboardListener(
             focusNode: widget.focusNode,
-            onKey: (event) {
-              _manegeKeyboardClicked(event);
+            onKeyEvent: (KeyEvent value) {
+              _manegeKeyboardClicked(value);
             },
             child: ClipRRect(
               borderRadius: const BorderRadius.all(Radius.circular(20)),
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
-                itemCount: widget.options.length,
-                controller: scrollController,
-                itemBuilder: (context, index) {
-                  final T option = widget.options.elementAt(index);
-                  final focusNode = listViewFocusNodes[index];
-                  final isFirst = index == 0;
-                  final isLast = index == widget.options.length - 1;
-                  final BorderRadius borderRaius;
-                  if (isFirst) {
-                    borderRaius = const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    );
-                  } else if (isLast) {
-                    borderRaius = const BorderRadius.only(
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20),
-                    );
-                  } else {
-                    borderRaius = const BorderRadius.only();
-                  }
+              child: Column(
+                children: [
+                  const SizedBox(height: 8),
+                  SearchWidget(
+                    title: 'Search',
+                    controller: searchController,
+                    searchFocusNode: searchFocusNode,
+                    onChanged: (normalizedText) {
+                      if (normalizedText.isEmpty) {
+                        optionsVN.value = widget.options;
+                        return;
+                      }
 
-                  return ClipRRect(
-                    borderRadius: const BorderRadius.all(
-                      Radius.circular(20),
-                    ),
-                    child: SizedBox(
-                      height: widget.tileHeight,
-                      child: ListTile(
-                        onTap: () {
-                          widget.onSelect(option);
-                        },
-                        shape: RoundedRectangleBorder(
-                          borderRadius: borderRaius,
-                        ),
-                        autofocus: false,
-                        dense: true,
-                        focusNode: focusNode,
-                        title: Text(widget.optionAsString(option)),
-                      ),
-                    ),
-                  );
-                },
+                      setState(() {
+                        optionsVN.value = widget.options.where((element) {
+                          final optionAsString = widget.optionAsString(element);
+                          return optionAsString.normalizeText
+                              .contains(normalizedText);
+                        }).toList();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 4),
+                  Expanded(
+                    child: ValueListenableBuilder(
+                        valueListenable: optionsVN,
+                        builder: (context, options, child) {
+                          return ListView.builder(
+                            padding: EdgeInsets.zero,
+                            itemCount: options.length,
+                            controller: scrollController,
+                            itemBuilder: (context, index) {
+                              final T option = options.elementAt(index);
+                              final focusNode = listViewFocusNodes[index];
+                              final isFirst = index == 0;
+                              final isLast = index == options.length - 1;
+                              final BorderRadius borderRaius;
+                              if (isFirst) {
+                                borderRaius = const BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  topRight: Radius.circular(20),
+                                );
+                              } else if (isLast) {
+                                borderRaius = const BorderRadius.only(
+                                  bottomLeft: Radius.circular(20),
+                                  bottomRight: Radius.circular(20),
+                                );
+                              } else {
+                                borderRaius = const BorderRadius.only();
+                              }
+
+                              return ClipRRect(
+                                borderRadius: const BorderRadius.all(
+                                  Radius.circular(20),
+                                ),
+                                child: SizedBox(
+                                  height: widget.tileHeight,
+                                  child: ListTile(
+                                    onTap: () {
+                                      widget.onSelect(option);
+                                    },
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: borderRaius,
+                                    ),
+                                    autofocus: false,
+                                    dense: true,
+                                    focusNode: focusNode,
+                                    title: Text(widget.optionAsString(option)),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }),
+                  ),
+                ],
               ),
             ),
           ),
@@ -156,12 +197,12 @@ class _OverlayChoicesListViewWidgetState<T>
   }
 
   bool didEndedAnimation = true;
-  void _manegeKeyboardClicked(RawKeyEvent event) {
+  void _manegeKeyboardClicked(KeyEvent event) {
     if (widget.focusNode.hasFocus == false) {
       return;
     }
 
-    if (event is RawKeyDownEvent) {
+    if (event is KeyDownEvent) {
       return;
     }
 
@@ -170,10 +211,27 @@ class _OverlayChoicesListViewWidgetState<T>
     final down = LogicalKeyboardKey.arrowDown.keyLabel;
     final enter = LogicalKeyboardKey.enter.keyLabel;
 
+    // print(event.logicalKey.keyLabel);
+
+    // IF its an letter or number, lets focus the [searchFocusNode] node
+    // We also need to add the typed caracter.
+    if (event.logicalKey.keyLabel.length == 1) {
+      if (searchFocusNode.hasFocus == false) {
+        searchController.text =
+            searchController.text + event.logicalKey.keyLabel;
+        searchFocusNode.requestFocus();
+      }
+
+      return;
+    }
+
     if (event.logicalKey.keyLabel == esc) {
-      widget.focusNode.unfocus();
-      widget.onClose();
-    } else if (event.logicalKey.keyLabel == up) {
+      _manegeOutIntent();
+    }
+
+    if (optionsVN.value.isEmpty) return;
+
+    if (event.logicalKey.keyLabel == up) {
       if (didEndedAnimation == false) return;
       _changeSelectedTileIfNotDisplayed(_ChangeTileDirection.up);
       if (selectedItemIndex == 0) return;
@@ -182,11 +240,21 @@ class _OverlayChoicesListViewWidgetState<T>
     } else if (event.logicalKey.keyLabel == down) {
       if (didEndedAnimation == false) return;
       _changeSelectedTileIfNotDisplayed(_ChangeTileDirection.down);
-      if (selectedItemIndex == widget.options.length - 1) return;
+      if (selectedItemIndex == optionsVN.value.length - 1) return;
       _unfocusPrevAndFocusNew(_ChangeTileDirection.down);
       _animateScrollToNewFocussedTile(_ChangeTileDirection.down);
     } else if (event.logicalKey.keyLabel == enter) {
-      widget.onSelect(widget.options[selectedItemIndex]);
+      widget.onSelect(optionsVN.value[selectedItemIndex]);
+    }
+  }
+
+  void _manegeOutIntent() {
+    if (searchFocusNode.hasFocus) {
+      searchFocusNode.unfocus();
+      widget.focusNode.requestFocus();
+    } else {
+      widget.focusNode.unfocus();
+      widget.onClose();
     }
   }
 

@@ -1,6 +1,6 @@
 name: cursor_autocomplete_options
 description: Add autocomplete dialog options to the cursor of a textfield.
-version: 1.5.0
+version: 1.6.0
 site: https://igormidev.github.io/cursor_autocomplete_options
 homepage: https://igormidev.github.io/cursor_autocomplete_options
 repository: https://github.com/igormidev/cursor_autocomplete_options
@@ -18,8 +18,10 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
+  dart_debouncer: ^1.1.0
   
 flutter: 
+  uses-material-design: true
 
 screenshots:
   - description: A visual demonstration of the cursor.
@@ -27,4 +29,4 @@ screenshots:
 
 topics:
   - layout
-  - ui
+  - ui-component

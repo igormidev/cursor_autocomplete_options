@@ -210,7 +210,7 @@ class OptionsController<T> {
               child: Material(
                 borderRadius: const BorderRadius.all(Radius.circular(20)),
                 elevation: 0,
-                color: Colors.grey[300],
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 child: suggestionCardBuilder(
                   context,
                   _buildChoicesWidget,
@@ -293,7 +293,7 @@ class OptionsController<T> {
             child: Material(
               borderRadius: const BorderRadius.all(Radius.circular(20)),
               elevation: 0,
-              color: Colors.grey[300],
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
               child: _buildChoicesWidget(options),
             ),
           ),
