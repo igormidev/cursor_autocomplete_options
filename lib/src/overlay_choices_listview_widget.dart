@@ -29,6 +29,13 @@ class OverlayChoicesListViewWidget<T> extends StatefulWidget {
   /// The height of each tile in the overlay.
   final double tileHeight;
 
+  final Widget Function(
+    T option,
+    int index,
+    FocusNode tileFocusNode,
+    void Function() onSelectCallback,
+  )? tileBuilder;
+
   const OverlayChoicesListViewWidget({
     super.key,
     required this.focusNode,
@@ -38,6 +45,7 @@ class OverlayChoicesListViewWidget<T> extends StatefulWidget {
     required this.optionAsString,
     required this.onSelect,
     required this.onClose,
+    required this.tileBuilder,
     this.tileHeight = 36,
   });
 
@@ -145,16 +153,14 @@ class _OverlayChoicesListViewWidgetState<T>
                             controller: scrollController,
                             itemBuilder: (context, index) {
                               final T option = options.elementAt(index);
-                              final focusNode = listViewFocusNodes[index];
-                              final isFirst = index == 0;
-                              final isLast = index == options.length - 1;
+                              final FocusNode? focusNode =
+                                  listViewFocusNodes[index];
+
+                              final bool isLast = index == options.length - 1;
+                              final bool isUnique = options.length == 1;
+
                               final BorderRadius borderRaius;
-                              if (isFirst) {
-                                borderRaius = const BorderRadius.only(
-                                  topLeft: Radius.circular(20),
-                                  topRight: Radius.circular(20),
-                                );
-                              } else if (isLast) {
+                              if (isLast && !isUnique) {
                                 borderRaius = const BorderRadius.only(
                                   bottomLeft: Radius.circular(20),
                                   bottomRight: Radius.circular(20),
@@ -163,24 +169,33 @@ class _OverlayChoicesListViewWidgetState<T>
                                 borderRaius = const BorderRadius.only();
                               }
 
+                              void tapFunction() {
+                                widget.onSelect(option);
+                              }
+
                               return ClipRRect(
                                 borderRadius: const BorderRadius.all(
                                   Radius.circular(20),
                                 ),
                                 child: SizedBox(
                                   height: widget.tileHeight,
-                                  child: ListTile(
-                                    onTap: () {
-                                      widget.onSelect(option);
-                                    },
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: borderRaius,
-                                    ),
-                                    autofocus: false,
-                                    dense: true,
-                                    focusNode: focusNode,
-                                    title: Text(widget.optionAsString(option)),
-                                  ),
+                                  child: widget.tileBuilder?.call(
+                                        option,
+                                        index,
+                                        focusNode!,
+                                        tapFunction,
+                                      ) ??
+                                      ListTile(
+                                        onTap: tapFunction,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: borderRaius,
+                                        ),
+                                        autofocus: false,
+                                        dense: true,
+                                        focusNode: focusNode!,
+                                        title:
+                                            Text(widget.optionAsString(option)),
+                                      ),
                                 ),
                               );
                             },
