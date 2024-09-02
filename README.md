@@ -150,6 +150,13 @@ This is a pre-built option builded above onTextAddedCallback that manipulate the
 ## Change card size
 Inside the `OptionsController`, you can manipulate the **width** and **height** of the options listview with the fields: `overlayCardHeight` and `overlayCardWeight`.
 
+## Change item tile widget
+While using `showOptionsMenuWithWrapperBuilder` and `showOptionsMenu` function, you can specify the `tileBuilder`.
+With that, you can use a custom widget to display the tile choose option. 
+
+### ⚠️ Important:
+Use the focus node to give the user a visual feedback of what tile is selected. The height of the tile can be edited using the `tileHeight` parametter of the **OptionsController**
+
 ## Debounce
 You can configure a debouncer in the trigger of the options overlay. The default is 300ms.
 

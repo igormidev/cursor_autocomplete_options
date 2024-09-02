@@ -1,6 +1,6 @@
 name: cursor_autocomplete_options
 description: Add autocomplete dialog options to the cursor of a textfield.
-version: 1.6.0
+version: 1.7.0
 site: https://igormidev.github.io/cursor_autocomplete_options
 homepage: https://igormidev.github.io/cursor_autocomplete_options
 repository: https://github.com/igormidev/cursor_autocomplete_options
