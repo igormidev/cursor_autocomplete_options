@@ -1,3 +1,7 @@
+## [1.7.0] 01-08-2024
+* Added possibility to edit list tile 
+* 🐛 BUG FIX - Focus node was not working as expected
+
 ## [1.6.0] 31-08-2024
 * Added searchbar to facilitate find the target item
 * Using Material Theme on dialog components for colors instead of static fixed colors

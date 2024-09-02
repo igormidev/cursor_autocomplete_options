@@ -1,3 +1,4 @@
+import 'package:cursor_autocomplete_options/src/debouncer.dart';
 import 'package:cursor_autocomplete_options/src/extensions.dart';
 import 'package:cursor_autocomplete_options/src/helpers/text_normalizer.dart';
 import 'package:cursor_autocomplete_options/src/widgets/search_widget.dart';
@@ -8,7 +9,7 @@ class OverlayChoicesListViewWidget<T> extends StatefulWidget {
   /// The focus node of the overlay to focus in it
   final FocusNode focusNode;
 
-  /// The height of the overlay card  that the options will be displayed.
+  /// The height of the overlay card that the options will be displayed.
   final double height;
 
   /// The width of the overlay card that the options will be displayed.
@@ -29,6 +30,13 @@ class OverlayChoicesListViewWidget<T> extends StatefulWidget {
   /// The height of each tile in the overlay.
   final double tileHeight;
 
+  final Widget Function(
+    T option,
+    int index,
+    FocusNode tileFocusNode,
+    void Function() onSelectCallback,
+  )? tileBuilder;
+
   const OverlayChoicesListViewWidget({
     super.key,
     required this.focusNode,
@@ -38,6 +46,7 @@ class OverlayChoicesListViewWidget<T> extends StatefulWidget {
     required this.optionAsString,
     required this.onSelect,
     required this.onClose,
+    required this.tileBuilder,
     this.tileHeight = 36,
   });
 
@@ -49,20 +58,30 @@ class OverlayChoicesListViewWidget<T> extends StatefulWidget {
 class _OverlayChoicesListViewWidgetState<T>
     extends State<OverlayChoicesListViewWidget<T>> {
   late final TextEditingController searchController;
-  int selectedItemIndex = 0;
+  int selectedIndex = 0;
+  int get selectedIndexAbsolute =>
+      optionsVN.value.isEmpty ? 0 : optionsVN.value[selectedIndex];
   final FocusNode searchFocusNode = FocusNode();
-  Map<int, FocusNode> listViewFocusNodes = {};
+  final Map<int, FocusNode> listViewFocusNodes = {};
   final ScrollController scrollController = ScrollController();
   late final Duration scrollDownDuration;
-  late final double height;
+  late double height;
 
-  late final ValueNotifier<List<T>> optionsVN;
+  late final ValueNotifier<List<int>> optionsVN;
+  late final Map<int, T> allOptions;
+
+  late final Debouncer debouncer;
 
   @override
   void initState() {
     super.initState();
+    debouncer = Debouncer(timerDuration: Durations.extralong1);
+
     searchController = TextEditingController();
-    optionsVN = ValueNotifier(widget.options);
+    allOptions = widget.options.asMap().map((index, element) {
+      return MapEntry(index, element);
+    });
+    optionsVN = ValueNotifier(allOptions.keys.toList());
 
     widget.focusNode.requestFocus();
     widget.options.forEachMapper((value, isFirst, isLast, index) {
@@ -74,6 +93,15 @@ class _OverlayChoicesListViewWidgetState<T>
     });
     scrollDownDuration = const Duration(milliseconds: 40);
 
+    _setCardHeightReference();
+    optionsVN.addListener(_manegeAddListener);
+  }
+
+  void _manegeAddListener() {
+    _setCardHeightReference();
+  }
+
+  void _setCardHeightReference() {
     final totalItensHeight = widget.options.length * widget.tileHeight;
     final isTotalItemHeightBiggerThanHeight = totalItensHeight > widget.height;
 
@@ -86,11 +114,13 @@ class _OverlayChoicesListViewWidgetState<T>
 
   @override
   void dispose() {
+    optionsVN.removeListener(_manegeAddListener);
     searchController.dispose();
     listViewFocusNodes.forEach((key, focusNode) {
       focusNode.dispose();
     });
     scrollController.dispose();
+    debouncer.dispose();
     super.dispose();
   }
 
@@ -119,73 +149,71 @@ class _OverlayChoicesListViewWidgetState<T>
                     title: 'Search',
                     controller: searchController,
                     searchFocusNode: searchFocusNode,
-                    onChanged: (normalizedText) {
-                      if (normalizedText.isEmpty) {
-                        optionsVN.value = widget.options;
-                        return;
-                      }
-
-                      setState(() {
-                        optionsVN.value = widget.options.where((element) {
-                          final optionAsString = widget.optionAsString(element);
-                          return optionAsString.normalizeText
-                              .contains(normalizedText);
-                        }).toList();
-                      });
-                    },
+                    debouncer: debouncer,
+                    onChanged: onUpdateSearch,
                   ),
                   const SizedBox(height: 4),
                   Expanded(
                     child: ValueListenableBuilder(
-                        valueListenable: optionsVN,
-                        builder: (context, options, child) {
-                          return ListView.builder(
-                            padding: EdgeInsets.zero,
-                            itemCount: options.length,
-                            controller: scrollController,
-                            itemBuilder: (context, index) {
-                              final T option = options.elementAt(index);
-                              final focusNode = listViewFocusNodes[index];
-                              final isFirst = index == 0;
-                              final isLast = index == options.length - 1;
-                              final BorderRadius borderRaius;
-                              if (isFirst) {
-                                borderRaius = const BorderRadius.only(
-                                  topLeft: Radius.circular(20),
-                                  topRight: Radius.circular(20),
-                                );
-                              } else if (isLast) {
-                                borderRaius = const BorderRadius.only(
-                                  bottomLeft: Radius.circular(20),
-                                  bottomRight: Radius.circular(20),
-                                );
-                              } else {
-                                borderRaius = const BorderRadius.only();
-                              }
+                      valueListenable: optionsVN,
+                      builder: (context, options, child) {
+                        return ListView.builder(
+                          padding: EdgeInsets.zero,
+                          itemCount: options.length,
+                          controller: scrollController,
+                          itemBuilder: (context, listViewIndex) {
+                            final index = options[listViewIndex];
+                            final T option = allOptions[index] as T;
+                            final FocusNode? focusNode =
+                                listViewFocusNodes[index];
 
-                              return ClipRRect(
-                                borderRadius: const BorderRadius.all(
-                                  Radius.circular(20),
-                                ),
-                                child: SizedBox(
-                                  height: widget.tileHeight,
-                                  child: ListTile(
-                                    onTap: () {
-                                      widget.onSelect(option);
-                                    },
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: borderRaius,
-                                    ),
-                                    autofocus: false,
-                                    dense: true,
-                                    focusNode: focusNode,
-                                    title: Text(widget.optionAsString(option)),
-                                  ),
-                                ),
+                            final bool isLast =
+                                listViewIndex == options.length - 1;
+                            final bool isUnique = options.length == 1;
+
+                            final BorderRadius borderRaius;
+                            if (isLast && !isUnique) {
+                              borderRaius = const BorderRadius.only(
+                                bottomLeft: Radius.circular(20),
+                                bottomRight: Radius.circular(20),
                               );
-                            },
-                          );
-                        }),
+                            } else {
+                              borderRaius = const BorderRadius.only();
+                            }
+
+                            void tapFunction() {
+                              widget.onSelect(option);
+                            }
+
+                            return ClipRRect(
+                              borderRadius: const BorderRadius.all(
+                                Radius.circular(20),
+                              ),
+                              child: SizedBox(
+                                height: widget.tileHeight,
+                                child: widget.tileBuilder?.call(
+                                      option,
+                                      index,
+                                      focusNode!,
+                                      tapFunction,
+                                    ) ??
+                                    ListTile(
+                                      onTap: tapFunction,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: borderRaius,
+                                      ),
+                                      autofocus: false,
+                                      dense: true,
+                                      focusNode: focusNode!,
+                                      title:
+                                          Text(widget.optionAsString(option)),
+                                    ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -197,7 +225,10 @@ class _OverlayChoicesListViewWidgetState<T>
   }
 
   bool didEndedAnimation = true;
+
   void _manegeKeyboardClicked(KeyEvent event) {
+    final keyLabel = event.logicalKey.keyLabel;
+
     if (widget.focusNode.hasFocus == false) {
       return;
     }
@@ -211,40 +242,56 @@ class _OverlayChoicesListViewWidgetState<T>
     final down = LogicalKeyboardKey.arrowDown.keyLabel;
     final enter = LogicalKeyboardKey.enter.keyLabel;
 
-    // print(event.logicalKey.keyLabel);
-
     // IF its an letter or number, lets focus the [searchFocusNode] node
     // We also need to add the typed caracter.
-    if (event.logicalKey.keyLabel.length == 1) {
+    if (keyLabel.length == 1) {
       if (searchFocusNode.hasFocus == false) {
-        searchController.text =
-            searchController.text + event.logicalKey.keyLabel;
+        final newText = searchController.text + keyLabel;
+        searchController.text = newText;
+
         searchFocusNode.requestFocus();
+
+        debouncer.resetDebounce(() {
+          onUpdateSearch(newText);
+        });
       }
 
       return;
     }
 
-    if (event.logicalKey.keyLabel == esc) {
-      _manegeOutIntent();
+    if (!<String>[up, down, enter, esc].any((e) => e == keyLabel)) {
+      return;
+    }
+
+    if (searchFocusNode.hasFocus) {
+      scrollController.jumpTo(0);
+      searchFocusNode.unfocus();
+      selectedIndex = 0;
+      listViewFocusNodes[selectedIndexAbsolute]?.requestFocus();
+      return;
     }
 
     if (optionsVN.value.isEmpty) return;
 
-    if (event.logicalKey.keyLabel == up) {
+    if (keyLabel == esc) {
+      _manegeOutIntent();
+    }
+
+    if (keyLabel == up) {
       if (didEndedAnimation == false) return;
       _changeSelectedTileIfNotDisplayed(_ChangeTileDirection.up);
-      if (selectedItemIndex == 0) return;
+      if (selectedIndex == 0) return;
       _unfocusPrevAndFocusNew(_ChangeTileDirection.up);
       _animateScrollToNewFocussedTile(_ChangeTileDirection.up);
-    } else if (event.logicalKey.keyLabel == down) {
+    } else if (keyLabel == down) {
       if (didEndedAnimation == false) return;
       _changeSelectedTileIfNotDisplayed(_ChangeTileDirection.down);
-      if (selectedItemIndex == optionsVN.value.length - 1) return;
+      if (selectedIndex == optionsVN.value.length - 1) return;
       _unfocusPrevAndFocusNew(_ChangeTileDirection.down);
       _animateScrollToNewFocussedTile(_ChangeTileDirection.down);
-    } else if (event.logicalKey.keyLabel == enter) {
-      widget.onSelect(optionsVN.value[selectedItemIndex]);
+    } else if (keyLabel == enter) {
+      final choosedItem = allOptions[selectedIndexAbsolute] as T;
+      widget.onSelect(choosedItem);
     }
   }
 
@@ -267,33 +314,36 @@ class _OverlayChoicesListViewWidgetState<T>
   /// So we will focus in the neerest element in the screen.
   void _changeSelectedTileIfNotDisplayed(_ChangeTileDirection type) {
     final currentOffset = scrollController.offset;
-    final currentTileSelectedStartPosition =
-        selectedItemIndex * widget.tileHeight;
+    final currentTileSelectedStartPosition = selectedIndex * widget.tileHeight;
 
     final isCurrentTileDisplayedInScreen =
         currentTileSelectedStartPosition >= currentOffset &&
-            currentTileSelectedStartPosition <= currentOffset + widget.height;
+            currentTileSelectedStartPosition <= currentOffset + height;
 
     if (isCurrentTileDisplayedInScreen == false) {
-      listViewFocusNodes[selectedItemIndex]?.unfocus();
-      final heightPadding =
-          type == _ChangeTileDirection.down ? 0 : widget.height;
+      listViewFocusNodes[selectedIndexAbsolute]?.unfocus();
+      final heightPadding = type == _ChangeTileDirection.down ? 0 : height;
       final double clossetsValue =
           (currentOffset + heightPadding - 1) / widget.tileHeight;
       final int clossetsValueInt = clossetsValue.round();
-      listViewFocusNodes[clossetsValueInt]?.requestFocus();
-      selectedItemIndex = clossetsValueInt;
+
+      final absoluteClossestValueInt = optionsVN.value[clossetsValueInt];
+      listViewFocusNodes[absoluteClossestValueInt]?.requestFocus();
+      selectedIndex = clossetsValueInt;
     }
   }
 
   void _unfocusPrevAndFocusNew(_ChangeTileDirection type) {
-    listViewFocusNodes[selectedItemIndex]?.unfocus();
-    if (type == _ChangeTileDirection.up) {
-      selectedItemIndex--;
-    } else {
-      selectedItemIndex++;
+    if (!widget.focusNode.hasFocus) {
+      widget.focusNode.requestFocus();
     }
-    listViewFocusNodes[selectedItemIndex]?.requestFocus();
+    listViewFocusNodes[selectedIndexAbsolute]?.unfocus();
+    if (type == _ChangeTileDirection.up) {
+      selectedIndex--;
+    } else {
+      selectedIndex++;
+    }
+    listViewFocusNodes[selectedIndexAbsolute]?.requestFocus();
   }
 
   void _animateScrollToNewFocussedTile(_ChangeTileDirection type) {
@@ -335,6 +385,25 @@ class _OverlayChoicesListViewWidgetState<T>
             .then((_) => didEndedAnimation = true);
         break;
     }
+  }
+
+  void onUpdateSearch(String rawText) {
+    final normalizedText = rawText.normalizeText;
+    if (normalizedText.isEmpty) {
+      optionsVN.value = allOptions.keys.toList();
+    } else {
+      optionsVN.value = allOptions.entries
+          .where((MapEntry<int, T> entry) {
+            final value = entry.value;
+            final optionAsString = widget.optionAsString(value);
+
+            return optionAsString.normalizeText.contains(normalizedText);
+          })
+          .map((entry) => entry.key)
+          .toList();
+    }
+
+    selectedIndex = 0;
   }
 }
 

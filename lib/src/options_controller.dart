@@ -19,6 +19,19 @@ import 'package:flutter/material.dart';
 /// with the options.
 /// {@endtemplate}
 
+/// {@template tileBuilder}
+/// ## The tile builder
+/// The function that will be used to build the tile that will
+/// be displayed in the overlay with the options.
+///
+/// ⚠️ IMPORTANT:<br>
+/// Use the focus node that is passed in the parameters to focus
+/// the textfield after the user select an option.
+///
+/// Also, you can use the focus node to make a animation in the
+/// tile to give the feedback to the user that the option is selected
+/// {@endtemplate}
+
 /// {@template overlayCardHeight}
 /// The height of the card that will be displayed with the options.
 /// {@endtemplate}
@@ -173,11 +186,22 @@ class OptionsController<T> {
   /// Defore executing anything, this function will debounce the
   /// call to avoid multiple calls in a short period of time.
   /// The debounce timmer can be setted in the constructor.
-  void showOptionsMenu(List<T> options) {
+  ///
+  ///
+  /// {@macro tileBuilder}
+  void showOptionsMenu(
+    List<T> options, {
+    Widget Function(
+      T option,
+      int index,
+      FocusNode tileFocusNode,
+      void Function() onSelectCallback,
+    )? tileBuilder,
+  }) {
     if (options.isEmpty) return;
     _debouncer.resetDebounce(() {
       _setDialogsBindings();
-      _setOverlayEntry(options);
+      _setOverlayEntry(options, tileBuilder: tileBuilder);
       if (_suggestionTagoverlayEntry != null) {
         final OverlayState overlay = this.overlay ?? Overlay.of(_context);
         overlay.insert(_suggestionTagoverlayEntry!);
@@ -191,11 +215,19 @@ class OptionsController<T> {
   /// If inside of your widget you wan't to show the normal Listview with the
   /// ListTile's containing the options, use [listTilesWithOptionsBuilder] with
   /// the options and you will have the default widget.
+  ///
+  /// {@macro tileBuilder}
   void showOptionsMenuWithWrapperBuilder({
     required Widget Function(
       BuildContext context,
       Widget Function(List<T> options) listTilesWithOptionsBuilder,
     ) suggestionCardBuilder,
+    Widget Function(
+      T option,
+      int index,
+      FocusNode tileFocusNode,
+      void Function() onSelectCallback,
+    )? tileBuilder,
   }) {
     _debouncer.resetDebounce(() {
       _setDialogsBindings();
@@ -213,7 +245,12 @@ class OptionsController<T> {
                 color: Theme.of(context).colorScheme.surfaceContainerLow,
                 child: suggestionCardBuilder(
                   context,
-                  _buildChoicesWidget,
+                  (options) {
+                    return _buildChoicesWidget(
+                      options,
+                      tileBuilder: tileBuilder,
+                    );
+                  },
                 ),
               ),
             ),
@@ -227,13 +264,30 @@ class OptionsController<T> {
     });
   }
 
-  Widget _buildChoicesWidget(List<T> options) {
+  Widget _buildChoicesWidget(
+    List<T> options, {
+    required Widget Function(
+      T option,
+      int index,
+      FocusNode tileFocusNode,
+      void Function() onSelectCallback,
+    )? tileBuilder,
+  }) {
     return OverlayChoicesListViewWidget<T>(
       tileHeight: tileHeight,
       width: overlayCardWeight,
       height: overlayCardHeight,
       focusNode: keyboardListenerNode,
       options: options,
+      tileBuilder: tileBuilder,
+      // (
+      //   T option,
+      //   int index,
+      //   FocusNode tileFocusNode,
+      //   void Function() onSelectCallback,
+      // ) {
+      //   return Container();
+      // },
       optionAsString: (option) {
         if (optionAsString != null) {
           return optionAsString!.call(option);
@@ -281,7 +335,15 @@ class OptionsController<T> {
     keyboardListenerNode.requestFocus();
   }
 
-  void _setOverlayEntry(List<T> options) {
+  void _setOverlayEntry(
+    List<T> options, {
+    required Widget Function(
+      T option,
+      int index,
+      FocusNode tileFocusNode,
+      void Function() onSelectCallback,
+    )? tileBuilder,
+  }) {
     _suggestionTagoverlayEntry = OverlayEntry(
       builder: (context) {
         return Positioned(
@@ -294,7 +356,7 @@ class OptionsController<T> {
               borderRadius: const BorderRadius.all(Radius.circular(20)),
               elevation: 0,
               color: Theme.of(context).colorScheme.surfaceContainerLow,
-              child: _buildChoicesWidget(options),
+              child: _buildChoicesWidget(options, tileBuilder: tileBuilder),
             ),
           ),
         );

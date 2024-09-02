@@ -1,5 +1,4 @@
 import 'package:cursor_autocomplete_options/src/debouncer.dart';
-import 'package:cursor_autocomplete_options/src/helpers/text_normalizer.dart';
 import 'package:flutter/material.dart';
 
 class SearchWidget extends StatefulWidget {
@@ -9,7 +8,9 @@ class SearchWidget extends StatefulWidget {
     required this.onChanged,
     required this.searchFocusNode,
     required this.controller,
+    required this.debouncer,
   });
+  final Debouncer debouncer;
   final TextEditingController? controller;
   final FocusNode searchFocusNode;
   final String title;
@@ -20,24 +21,11 @@ class SearchWidget extends StatefulWidget {
 }
 
 class _SearchWidgetState extends State<SearchWidget> {
-  late final Debouncer debouncer;
-  @override
-  void initState() {
-    super.initState();
-    debouncer = Debouncer(timerDuration: Durations.extralong1);
-  }
-
-  @override
-  void dispose() {
-    debouncer.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 30,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
+      margin: const EdgeInsets.only(left: 8, right: 2),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
@@ -50,20 +38,19 @@ class _SearchWidgetState extends State<SearchWidget> {
             child: Transform.translate(
               offset: const Offset(5, -7),
               child: TextFormField(
+                textCapitalization: TextCapitalization.none,
+                keyboardType: TextInputType.emailAddress,
                 controller: widget.controller,
                 focusNode: widget.searchFocusNode,
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   hintText: widget.title,
                   counterText: "",
-                  suffixIcon: DebounceWidget(
-                    debouncer,
-                  ),
                 ),
                 onChanged: (text) {
-                  debouncer.resetDebounce(
+                  widget.debouncer.resetDebounce(
                     () {
-                      widget.onChanged(text.normalizeText);
+                      widget.onChanged(text);
                     },
                   );
                 },
@@ -71,7 +58,12 @@ class _SearchWidgetState extends State<SearchWidget> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          Transform.scale(
+            scale: 0.9,
+            child: DebounceWidget(
+              widget.debouncer,
+            ),
+          ),
         ],
       ),
     );
