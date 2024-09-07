@@ -241,6 +241,13 @@ class _OverlayChoicesListViewWidgetState<T>
     final up = LogicalKeyboardKey.arrowUp.keyLabel;
     final down = LogicalKeyboardKey.arrowDown.keyLabel;
     final enter = LogicalKeyboardKey.enter.keyLabel;
+    final backspace = LogicalKeyboardKey.backspace.keyLabel;
+
+    if (backspace == keyLabel && searchFocusNode.hasFocus == false) {
+      searchFocusNode.requestFocus();
+
+      return;
+    }
 
     // IF its an letter or number, lets focus the [searchFocusNode] node
     // We also need to add the typed caracter.
@@ -404,6 +411,7 @@ class _OverlayChoicesListViewWidgetState<T>
     }
 
     selectedIndex = 0;
+    scrollController.jumpTo(0);
   }
 }
 

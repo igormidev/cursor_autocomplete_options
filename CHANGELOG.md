@@ -1,3 +1,6 @@
+## [1.7.1] 01-08-2024
+* Backspace now will focus
+
 ## [1.7.0] 01-08-2024
 * Added possibility to edit list tile 
 * 🐛 BUG FIX - Focus node was not working as expected
