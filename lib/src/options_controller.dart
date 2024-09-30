@@ -1,7 +1,11 @@
+// ignore_for_file: unnecessary_cast, unnecessary_null_comparison
+
 import 'dart:async';
 import 'package:cursor_autocomplete_options/src/debouncer.dart';
+import 'package:cursor_autocomplete_options/src/model/folder_structure.dart';
 import 'package:cursor_autocomplete_options/src/models.dart';
 import 'package:cursor_autocomplete_options/src/overlay_choices_listview_widget.dart';
+import 'package:cursor_autocomplete_options/src/pages/folder_dialog_page.dart';
 import 'package:flutter/material.dart';
 
 /// {@template textfieldTemplate}
@@ -79,9 +83,6 @@ class OptionsController<T> {
   /// The overlay entry that will be used to display the options.
   OverlayEntry? _suggestionTagoverlayEntry;
 
-  /// {@macro optionAsString}
-  String Function(T option)? optionAsString;
-
   /// {@macro overlayCardHeight}
   double overlayCardHeight;
 
@@ -143,8 +144,6 @@ class OptionsController<T> {
   /// The height of each tile in the overlay.
   /// - [willAutomaticallyCloseDialogAfterSelection]<br>
   /// {@macro willAutomaticallyCloseDialogAfterSelection}
-  /// - [optionAsString]<br>
-  /// {@macro optionAsString}
   /// - [selectInCursorParser]<br>
   /// {@macro selectInCursorParser}
   /// - [onTextAddedCallback]<br>
@@ -157,7 +156,6 @@ class OptionsController<T> {
     this.overlayCardWeight = 200,
     Duration debounceDuration = const Duration(milliseconds: 300),
     this.willAutomaticallyCloseDialogAfterSelection = true,
-    this.optionAsString,
     this.selectInCursorParser,
     this.overlay,
     this.tileHeight = 36,
@@ -165,10 +163,7 @@ class OptionsController<T> {
   })  : _textEditingController = textEditingController,
         _debouncer = Debouncer(timerDuration: debounceDuration),
         keyboardListenerNode = FocusNode(),
-        _context = context,
-        assert(
-            (optionAsString == null && T == String) || optionAsString != null,
-            'The parameter `optionAsString` can only be null if the generic type <T> is not String.');
+        _context = context;
 
   /// The context that you had passed in the constructor can
   /// be deprecated in some point. So you can update the context
@@ -176,6 +171,57 @@ class OptionsController<T> {
   /// `didChangeDependencies` method or right bellow your build function.
   void updateContext(BuildContext context) {
     _context = context;
+  }
+
+  void showOptions({
+    required List<StructuredDataType<T>> children,
+    required String Function(T option) optionAsString,
+  }) {
+    _debouncer.resetDebounce(() {
+      _setDialogsBindings();
+      _suggestionTagoverlayEntry = OverlayEntry(
+        builder: (context) {
+          return Positioned(
+            left: _leftMarginOffset,
+            top: _bottomMarginOffset,
+            child: SizedBox(
+              width: overlayCardWeight,
+              height: overlayCardHeight,
+              child: FolderDialogPage<T>(
+                children: children,
+                width: overlayCardWeight,
+                height: overlayCardHeight,
+                focusNode: keyboardListenerNode,
+                onClose: closeOverlayIfOpen,
+                optionAsString: (option) {
+                  if (optionAsString != null) {
+                    return optionAsString.call(option);
+                  } else {
+                    return option as String;
+                  }
+                },
+                onSelect: (T option) async {
+                  final selectInCursor =
+                      await selectInCursorParser?.call(option) ??
+                          InsertInCursorPayload(
+                            text: optionAsString.call(option),
+                          );
+                  await _manegeSelectedText(option, selectInCursor);
+
+                  if (willAutomaticallyCloseDialogAfterSelection) {
+                    closeOverlayIfOpen();
+                  }
+                },
+              ),
+            ),
+          );
+        },
+      );
+      if (_suggestionTagoverlayEntry != null) {
+        final OverlayState overlay = this.overlay ?? Overlay.of(_context);
+        overlay.insert(_suggestionTagoverlayEntry!);
+      }
+    });
   }
 
   /// # The dialog trigger function
@@ -189,6 +235,9 @@ class OptionsController<T> {
   ///
   ///
   /// {@macro tileBuilder}
+  ///
+  /// - [optionAsString]<br>
+  /// {@macro optionAsString}
   void showOptionsMenu(
     List<T> options, {
     Widget Function(
@@ -197,11 +246,15 @@ class OptionsController<T> {
       FocusNode tileFocusNode,
       void Function() onSelectCallback,
     )? tileBuilder,
+
+    /// {@macro optionAsString}
+    String Function(T option)? optionAsString,
   }) {
     if (options.isEmpty) return;
     _debouncer.resetDebounce(() {
       _setDialogsBindings();
-      _setOverlayEntry(options, tileBuilder: tileBuilder);
+      _setOverlayEntry(options,
+          tileBuilder: tileBuilder, optionAsString: optionAsString);
       if (_suggestionTagoverlayEntry != null) {
         final OverlayState overlay = this.overlay ?? Overlay.of(_context);
         overlay.insert(_suggestionTagoverlayEntry!);
@@ -228,6 +281,9 @@ class OptionsController<T> {
       FocusNode tileFocusNode,
       void Function() onSelectCallback,
     )? tileBuilder,
+
+    /// {@macro optionAsString}
+    required String Function(T option)? optionAsString,
   }) {
     _debouncer.resetDebounce(() {
       _setDialogsBindings();
@@ -249,6 +305,7 @@ class OptionsController<T> {
                     return _buildChoicesWidget(
                       options,
                       tileBuilder: tileBuilder,
+                      optionAsString: optionAsString,
                     );
                   },
                 ),
@@ -264,6 +321,7 @@ class OptionsController<T> {
     });
   }
 
+  /// {@macro optionAsString}
   Widget _buildChoicesWidget(
     List<T> options, {
     required Widget Function(
@@ -272,7 +330,11 @@ class OptionsController<T> {
       FocusNode tileFocusNode,
       void Function() onSelectCallback,
     )? tileBuilder,
+    required String Function(T option)? optionAsString,
   }) {
+    assert((optionAsString == null && T == String) || optionAsString != null,
+        'The parameter `optionAsString` can only be null if the generic type <T> is not String.');
+
     return OverlayChoicesListViewWidget<T>(
       tileHeight: tileHeight,
       width: overlayCardWeight,
@@ -280,17 +342,9 @@ class OptionsController<T> {
       focusNode: keyboardListenerNode,
       options: options,
       tileBuilder: tileBuilder,
-      // (
-      //   T option,
-      //   int index,
-      //   FocusNode tileFocusNode,
-      //   void Function() onSelectCallback,
-      // ) {
-      //   return Container();
-      // },
       optionAsString: (option) {
         if (optionAsString != null) {
-          return optionAsString!.call(option);
+          return optionAsString.call(option);
         } else {
           return option as String;
         }
@@ -343,6 +397,9 @@ class OptionsController<T> {
       FocusNode tileFocusNode,
       void Function() onSelectCallback,
     )? tileBuilder,
+
+    /// {@macro optionAsString}
+    required String Function(T option)? optionAsString,
   }) {
     _suggestionTagoverlayEntry = OverlayEntry(
       builder: (context) {
@@ -356,7 +413,11 @@ class OptionsController<T> {
               borderRadius: const BorderRadius.all(Radius.circular(20)),
               elevation: 0,
               color: Theme.of(context).colorScheme.surfaceContainerLow,
-              child: _buildChoicesWidget(options, tileBuilder: tileBuilder),
+              child: _buildChoicesWidget(
+                options,
+                tileBuilder: tileBuilder,
+                optionAsString: optionAsString,
+              ),
             ),
           ),
         );

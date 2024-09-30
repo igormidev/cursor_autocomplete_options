@@ -25,6 +25,11 @@ class MyApp extends StatelessWidget {
   }
 }
 
+enum SelectedType {
+  simple,
+  complex;
+}
+
 class Example extends StatefulWidget {
   const Example({super.key});
 
@@ -64,6 +69,8 @@ class _ExampleState extends State<Example> {
   double width = 300;
   int maxLines = 5;
 
+  final Set<SelectedType> selectedTypes = {SelectedType.simple};
+
   @override
   Widget build(BuildContext context) {
     optionsController.updateContext(context);
@@ -71,29 +78,52 @@ class _ExampleState extends State<Example> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Flutter textfield sugestions demo'),
-        leading: IconButton(
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return Dialog(
-                  child: ChangeFields(
-                    value: width.round(),
-                    textfieldLines: maxLines,
-                    onSave: (newWidth, maxLines) {
-                      setState(() {
-                        width = newWidth;
-                        this.maxLines = maxLines;
-                      });
-                    },
-                  ),
+        leadingWidth: 310,
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(width: 16),
+            IconButton(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return Dialog(
+                      child: ChangeFields(
+                        value: width.round(),
+                        textfieldLines: maxLines,
+                        onSave: (newWidth, maxLines) {
+                          setState(() {
+                            width = newWidth;
+                            this.maxLines = maxLines;
+                          });
+                        },
+                      ),
+                    );
+                  },
                 );
               },
-            );
-          },
-          icon: const Icon(
-            Icons.settings,
-          ),
+              icon: const Icon(Icons.settings),
+            ),
+            const SizedBox(width: 16),
+            SegmentedButton<SelectedType>(
+              segments: SelectedType.values
+                  .map(
+                    (t) => ButtonSegment(
+                      value: t,
+                      label: Text(t.name),
+                    ),
+                  )
+                  .toList(),
+              selected: selectedTypes,
+              onSelectionChanged: (p0) {
+                setState(() {
+                  selectedTypes.clear();
+                  selectedTypes.addAll(p0);
+                });
+              },
+            ),
+          ],
         ),
         actions: [
           DropdownButton<AlignmentOptions>(
@@ -137,17 +167,110 @@ class _ExampleState extends State<Example> {
               final isTypedCaracterHashtag = typedValue == '#';
 
               if (isTypedCaracterHashtag) {
-                optionsController.showOptionsMenu(suggestion);
+                optionsController.showOptions(
+                  children: complexSuggestion,
+                  optionAsString: (option) {
+                    return option;
+                  },
+                );
               }
             },
           ),
+          // child: TextFormField(
+          //   focusNode: textfieldFocusNode,
+          //   controller: textEditingController,
+          //   decoration: const InputDecoration(
+          //     hintText: 'Type something and use "#" anytime to show options',
+          //   ),
+          //   style: const TextStyle(height: 1, fontSize: 18),
+          //   maxLines: maxLines,
+          //   onChanged: (value) {
+          //     if (value.isEmpty) return;
+
+          //     final cursorPositionIndex =
+          //         textEditingController.selection.base.offset;
+
+          //     final typedValue = value[cursorPositionIndex - 1];
+
+          //     final isTypedCaracterHashtag = typedValue == '#';
+
+          //     if (isTypedCaracterHashtag) {
+          //       optionsController.showOptionsMenu(suggestion);
+          //     }
+          //   },
+          // ),
         ),
       ),
     );
   }
 }
 
-final List<String> suggestion = [
+final List<StructuredDataType<String>> complexSuggestion = [
+  const FolderStructure(item: 'Folder 1', children: [
+    FolderStructure(item: 'Folder 1.1', children: [
+      FolderStructure(item: 'Folder 2.1.1', children: [
+        FileStructureOptions(item: 'File 2.1.1'),
+        FileStructureOptions(item: 'File 2.1.2'),
+        FileStructureOptions(item: 'File 2.1.3'),
+      ]),
+      FileStructureOptions(item: 'File 1.1.1'),
+      FileStructureOptions(item: 'File 1.1.2'),
+      FileStructureOptions(item: 'File 1.1.3'),
+    ]),
+    FolderStructure(item: 'Folder 1.2', children: [
+      FileStructureOptions(item: 'File 1.2.1'),
+      FileStructureOptions(item: 'File 1.2.2'),
+      FileStructureOptions(item: 'File 1.2.3'),
+    ]),
+    FolderStructure(item: 'Folder 1.3', children: [
+      FileStructureOptions(item: 'File 1.3.1'),
+      FileStructureOptions(item: 'File 1.3.2'),
+      FileStructureOptions(item: 'File 1.3.3'),
+    ]),
+  ]),
+  const FolderStructure(item: 'Folder 2', children: [
+    FolderStructure(item: 'Folder 2.1', children: [
+      FileStructureOptions(item: 'File 2.1.1'),
+      FileStructureOptions(item: 'File 2.1.2'),
+      FileStructureOptions(item: 'File 2.1.3'),
+    ]),
+    FolderStructure(item: 'Folder 2.2', children: [
+      FileStructureOptions(item: 'File 2.2.1'),
+      FileStructureOptions(item: 'File 2.2.2'),
+      FileStructureOptions(item: 'File 2.2.3'),
+    ]),
+    FolderStructure(item: 'Folder 2.3', children: [
+      FileStructureOptions(item: 'File 2.3.1'),
+      FileStructureOptions(item: 'File 2.3.2'),
+      FileStructureOptions(item: 'File 2.3.3'),
+    ]),
+  ]),
+  const FolderStructure(item: 'Folder 3', children: [
+    FolderStructure(item: 'Folder 3.1', children: [
+      FileStructureOptions(item: 'File 3.1.1'),
+      FileStructureOptions(item: 'File 3.1.2'),
+      FileStructureOptions(item: 'File 3.1.3'),
+    ]),
+    FolderStructure(item: 'Folder 3.2', children: [
+      FileStructureOptions(item: 'File 3.2.1'),
+      FileStructureOptions(item: 'File 3.2.2'),
+      FileStructureOptions(item: 'File 3.2.3'),
+    ]),
+    FolderStructure(item: 'Folder 3.3', children: [
+      FileStructureOptions(item: 'File 3.3.1'),
+      FileStructureOptions(item: 'File 3.3.2'),
+      FileStructureOptions(item: 'File 3.3.3'),
+    ]),
+  ]),
+  const FileStructureOptions(item: 'File 1'),
+  const FileStructureOptions(item: 'File 2'),
+  const FileStructureOptions(item: 'File 3'),
+  const FileStructureOptions(item: 'File 4'),
+  const FileStructureOptions(item: 'File 5'),
+  const FileStructureOptions(item: 'File 6'),
+];
+
+final List<String> simpleSuggestion = [
   'Floor',
   'Bar',
   'Manana',
