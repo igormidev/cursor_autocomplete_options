@@ -4,7 +4,6 @@ import 'dart:async';
 import 'package:cursor_autocomplete_options/src/debouncer.dart';
 import 'package:cursor_autocomplete_options/src/model/folder_structure.dart';
 import 'package:cursor_autocomplete_options/src/models.dart';
-import 'package:cursor_autocomplete_options/src/overlay_choices_listview_widget.dart';
 import 'package:cursor_autocomplete_options/src/pages/folder_dialog_page.dart';
 import 'package:flutter/material.dart';
 
@@ -173,9 +172,28 @@ class OptionsController<T> {
     _context = context;
   }
 
-  void showOptions({
+  /// # The dialog trigger function
+  ///
+  /// Will show a dialog with the following [options] in a listview
+  /// so the user can pick one of them.
+  ///
+  /// Defore executing anything, this function will debounce the
+  /// call to avoid multiple calls in a short period of time.
+  /// The debounce timmer can be setted in the constructor.
+  ///
+  ///
+  /// {@macro tileBuilder}
+  ///
+  /// - [optionAsString]<br>
+  /// {@macro optionAsString}
+  void showSimpleOptions({
     required List<StructuredDataType<T>> children,
-    required String Function(T option) optionAsString,
+    required String Function(T option)? optionAsString,
+    Widget Function(
+      T option,
+      bool isSelected,
+      void Function() onSelectCallback,
+    )? tileBuilder,
   }) {
     _debouncer.resetDebounce(() {
       _setDialogsBindings();
@@ -191,7 +209,6 @@ class OptionsController<T> {
                 children: children,
                 width: overlayCardWeight,
                 height: overlayCardHeight,
-                focusNode: keyboardListenerNode,
                 onClose: closeOverlayIfOpen,
                 optionAsString: (option) {
                   if (optionAsString != null) {
@@ -200,12 +217,13 @@ class OptionsController<T> {
                     return option as String;
                   }
                 },
+                tileBuilder: tileBuilder,
                 onSelect: (T option) async {
-                  final selectInCursor =
-                      await selectInCursorParser?.call(option) ??
-                          InsertInCursorPayload(
-                            text: optionAsString.call(option),
-                          );
+                  final selectInCursor = await selectInCursorParser
+                          ?.call(option) ??
+                      InsertInCursorPayload(
+                        text: optionAsString?.call(option) ?? option.toString(),
+                      );
                   await _manegeSelectedText(option, selectInCursor);
 
                   if (willAutomaticallyCloseDialogAfterSelection) {
@@ -224,44 +242,6 @@ class OptionsController<T> {
     });
   }
 
-  /// # The dialog trigger function
-  ///
-  /// Will show a dialog with the following [options] in a listview
-  /// so the user can pick one of them.
-  ///
-  /// Defore executing anything, this function will debounce the
-  /// call to avoid multiple calls in a short period of time.
-  /// The debounce timmer can be setted in the constructor.
-  ///
-  ///
-  /// {@macro tileBuilder}
-  ///
-  /// - [optionAsString]<br>
-  /// {@macro optionAsString}
-  void showOptionsMenu(
-    List<T> options, {
-    Widget Function(
-      T option,
-      int index,
-      FocusNode tileFocusNode,
-      void Function() onSelectCallback,
-    )? tileBuilder,
-
-    /// {@macro optionAsString}
-    String Function(T option)? optionAsString,
-  }) {
-    if (options.isEmpty) return;
-    _debouncer.resetDebounce(() {
-      _setDialogsBindings();
-      _setOverlayEntry(options,
-          tileBuilder: tileBuilder, optionAsString: optionAsString);
-      if (_suggestionTagoverlayEntry != null) {
-        final OverlayState overlay = this.overlay ?? Overlay.of(_context);
-        overlay.insert(_suggestionTagoverlayEntry!);
-      }
-    });
-  }
-
   /// Will display the custom widget that you wan't.
   /// Provide the widget you wan't to build in the [litsTileWithOptionsBuilder] return.
   ///
@@ -270,20 +250,21 @@ class OptionsController<T> {
   /// the options and you will have the default widget.
   ///
   /// {@macro tileBuilder}
-  void showOptionsMenuWithWrapperBuilder({
+  ///
+  /// - [optionAsString]<br>
+  /// {@macro optionAsString}
+  void showComplexOptions({
+    required String Function(T option)? optionAsString,
     required Widget Function(
       BuildContext context,
-      Widget Function(List<T> options) listTilesWithOptionsBuilder,
+      Widget Function(List<StructuredDataType<T>> options)
+          listTilesWithOptionsBuilder,
     ) suggestionCardBuilder,
     Widget Function(
       T option,
-      int index,
-      FocusNode tileFocusNode,
+      bool isSelected,
       void Function() onSelectCallback,
     )? tileBuilder,
-
-    /// {@macro optionAsString}
-    required String Function(T option)? optionAsString,
   }) {
     _debouncer.resetDebounce(() {
       _setDialogsBindings();
@@ -295,20 +276,37 @@ class OptionsController<T> {
             child: SizedBox(
               width: overlayCardWeight,
               height: overlayCardHeight,
-              child: Material(
-                borderRadius: const BorderRadius.all(Radius.circular(20)),
-                elevation: 0,
-                color: Theme.of(context).colorScheme.surfaceContainerLow,
-                child: suggestionCardBuilder(
-                  context,
-                  (options) {
-                    return _buildChoicesWidget(
-                      options,
-                      tileBuilder: tileBuilder,
-                      optionAsString: optionAsString,
-                    );
-                  },
-                ),
+              child: suggestionCardBuilder(
+                context,
+                (options) {
+                  return FolderDialogPage<T>(
+                    children: options,
+                    width: overlayCardWeight,
+                    height: overlayCardHeight,
+                    onClose: closeOverlayIfOpen,
+                    optionAsString: (option) {
+                      if (optionAsString != null) {
+                        return optionAsString.call(option);
+                      } else {
+                        return option as String;
+                      }
+                    },
+                    tileBuilder: tileBuilder,
+                    onSelect: (T option) async {
+                      final selectInCursor =
+                          await selectInCursorParser?.call(option) ??
+                              InsertInCursorPayload(
+                                text: optionAsString?.call(option) ??
+                                    option.toString(),
+                              );
+                      await _manegeSelectedText(option, selectInCursor);
+
+                      if (willAutomaticallyCloseDialogAfterSelection) {
+                        closeOverlayIfOpen();
+                      }
+                    },
+                  );
+                },
               ),
             ),
           );
@@ -319,49 +317,6 @@ class OptionsController<T> {
         overlay.insert(_suggestionTagoverlayEntry!);
       }
     });
-  }
-
-  /// {@macro optionAsString}
-  Widget _buildChoicesWidget(
-    List<T> options, {
-    required Widget Function(
-      T option,
-      int index,
-      FocusNode tileFocusNode,
-      void Function() onSelectCallback,
-    )? tileBuilder,
-    required String Function(T option)? optionAsString,
-  }) {
-    assert((optionAsString == null && T == String) || optionAsString != null,
-        'The parameter `optionAsString` can only be null if the generic type <T> is not String.');
-
-    return OverlayChoicesListViewWidget<T>(
-      tileHeight: tileHeight,
-      width: overlayCardWeight,
-      height: overlayCardHeight,
-      focusNode: keyboardListenerNode,
-      options: options,
-      tileBuilder: tileBuilder,
-      optionAsString: (option) {
-        if (optionAsString != null) {
-          return optionAsString.call(option);
-        } else {
-          return option as String;
-        }
-      },
-      onSelect: (T option) async {
-        final selectInCursor = await selectInCursorParser?.call(option) ??
-            InsertInCursorPayload(
-              text: optionAsString?.call(option) ?? option.toString(),
-            );
-        await _manegeSelectedText(option, selectInCursor);
-
-        if (willAutomaticallyCloseDialogAfterSelection) {
-          closeOverlayIfOpen();
-        }
-      },
-      onClose: closeOverlayIfOpen,
-    );
   }
 
   /// Will dispose the controller resources and remove the overlay if it is open.
@@ -387,42 +342,6 @@ class OptionsController<T> {
 
     textfieldFocusNode.unfocus();
     keyboardListenerNode.requestFocus();
-  }
-
-  void _setOverlayEntry(
-    List<T> options, {
-    required Widget Function(
-      T option,
-      int index,
-      FocusNode tileFocusNode,
-      void Function() onSelectCallback,
-    )? tileBuilder,
-
-    /// {@macro optionAsString}
-    required String Function(T option)? optionAsString,
-  }) {
-    _suggestionTagoverlayEntry = OverlayEntry(
-      builder: (context) {
-        return Positioned(
-          left: _leftMarginOffset,
-          top: _bottomMarginOffset,
-          child: SizedBox(
-            width: overlayCardWeight,
-            height: overlayCardHeight,
-            child: Material(
-              borderRadius: const BorderRadius.all(Radius.circular(20)),
-              elevation: 0,
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
-              child: _buildChoicesWidget(
-                options,
-                tileBuilder: tileBuilder,
-                optionAsString: optionAsString,
-              ),
-            ),
-          ),
-        );
-      },
-    );
   }
 
   Future<void> _manegeSelectedText(

@@ -69,7 +69,7 @@ class _ExampleState extends State<Example> {
   double width = 300;
   int maxLines = 5;
 
-  final Set<SelectedType> selectedTypes = {SelectedType.simple};
+  // final Set<SelectedType> selectedTypes = {SelectedType.simple};
 
   @override
   Widget build(BuildContext context) {
@@ -106,23 +106,23 @@ class _ExampleState extends State<Example> {
               icon: const Icon(Icons.settings),
             ),
             const SizedBox(width: 16),
-            SegmentedButton<SelectedType>(
-              segments: SelectedType.values
-                  .map(
-                    (t) => ButtonSegment(
-                      value: t,
-                      label: Text(t.name),
-                    ),
-                  )
-                  .toList(),
-              selected: selectedTypes,
-              onSelectionChanged: (p0) {
-                setState(() {
-                  selectedTypes.clear();
-                  selectedTypes.addAll(p0);
-                });
-              },
-            ),
+            // SegmentedButton<SelectedType>(
+            //   segments: SelectedType.values
+            //       .map(
+            //         (t) => ButtonSegment(
+            //           value: t,
+            //           label: Text(t.name),
+            //         ),
+            //       )
+            //       .toList(),
+            //   selected: selectedTypes,
+            //   onSelectionChanged: (p0) {
+            //     setState(() {
+            //       selectedTypes.clear();
+            //       selectedTypes.addAll(p0);
+            //     });
+            //   },
+            // ),
           ],
         ),
         actions: [
@@ -148,57 +148,36 @@ class _ExampleState extends State<Example> {
         child: Container(
           color: Colors.grey[200],
           width: width,
-          child: TextFormField(
-            focusNode: textfieldFocusNode,
-            controller: textEditingController,
-            decoration: const InputDecoration(
-              hintText: 'Type something and use "#" anytime to show options',
-            ),
-            style: const TextStyle(height: 1, fontSize: 18),
-            maxLines: maxLines,
-            onChanged: (value) {
-              if (value.isEmpty) return;
+          child: Builder(builder: (context) {
+            return TextFormField(
+              focusNode: textfieldFocusNode,
+              controller: textEditingController,
+              decoration: const InputDecoration(
+                hintText: 'Type something and use "#" anytime to show options',
+              ),
+              style: const TextStyle(height: 1, fontSize: 18),
+              maxLines: maxLines,
+              onChanged: (value) {
+                if (value.isEmpty) return;
 
-              final cursorPositionIndex =
-                  textEditingController.selection.base.offset;
+                final cursorPositionIndex =
+                    textEditingController.selection.base.offset;
 
-              final typedValue = value[cursorPositionIndex - 1];
+                final typedValue = value[cursorPositionIndex - 1];
 
-              final isTypedCaracterHashtag = typedValue == '#';
+                final isTypedCaracterHashtag = typedValue == '#';
 
-              if (isTypedCaracterHashtag) {
-                optionsController.showOptions(
-                  children: complexSuggestion,
-                  optionAsString: (option) {
-                    return option;
-                  },
-                );
-              }
-            },
-          ),
-          // child: TextFormField(
-          //   focusNode: textfieldFocusNode,
-          //   controller: textEditingController,
-          //   decoration: const InputDecoration(
-          //     hintText: 'Type something and use "#" anytime to show options',
-          //   ),
-          //   style: const TextStyle(height: 1, fontSize: 18),
-          //   maxLines: maxLines,
-          //   onChanged: (value) {
-          //     if (value.isEmpty) return;
-
-          //     final cursorPositionIndex =
-          //         textEditingController.selection.base.offset;
-
-          //     final typedValue = value[cursorPositionIndex - 1];
-
-          //     final isTypedCaracterHashtag = typedValue == '#';
-
-          //     if (isTypedCaracterHashtag) {
-          //       optionsController.showOptionsMenu(suggestion);
-          //     }
-          //   },
-          // ),
+                if (isTypedCaracterHashtag) {
+                  optionsController.showSimpleOptions(
+                    children: complexSuggestion,
+                    optionAsString: (option) {
+                      return option;
+                    },
+                  );
+                }
+              },
+            );
+          }),
         ),
       ),
     );

@@ -9,9 +9,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class FolderDialogPage<T> extends StatefulWidget {
-  /// The focus node of the overlay to focus in it
-  final FocusNode focusNode;
-
   /// The height of the overlay card that the options will be displayed.
   final double height;
 
@@ -37,7 +34,6 @@ class FolderDialogPage<T> extends StatefulWidget {
 
   const FolderDialogPage({
     super.key,
-    required this.focusNode,
     required this.children,
     required this.height,
     required this.width,
@@ -93,7 +89,6 @@ class _FolderDialogPageState<T> extends State<FolderDialogPage<T>> {
   Widget build(BuildContext context) {
     return TapRegion(
       onTapOutside: (event) {
-        widget.focusNode.unfocus();
         widget.onClose();
       },
       child: Navigator(
@@ -411,6 +406,8 @@ class _FolderDialogPageState<T> extends State<FolderDialogPage<T>> {
       if (currentPage.last.search.value.isNotEmpty) {
         currentPage.last.search.value = currentPage.last.search.value
             .substring(0, currentPage.last.search.value.length - 1);
+
+        if (isEmpty) return;
 
         currentPage.last.itemScrollController.scrollTo(
           index: 0,
