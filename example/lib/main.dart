@@ -38,7 +38,7 @@ class Example extends StatefulWidget {
 }
 
 class _ExampleState extends State<Example> {
-  late final OptionsController<String> optionsController;
+  late final OptionsController<String, String> optionsController;
   final FocusNode textfieldFocusNode = FocusNode();
   final TextEditingController textEditingController = TextEditingController();
 
@@ -46,7 +46,7 @@ class _ExampleState extends State<Example> {
   void initState() {
     super.initState();
 
-    optionsController = OptionsController<String>(
+    optionsController = OptionsController<String, String>(
       textfieldFocusNode: textfieldFocusNode,
       textEditingController: textEditingController,
       context: context,
@@ -170,7 +170,10 @@ class _ExampleState extends State<Example> {
                 if (isTypedCaracterHashtag) {
                   optionsController.showSimpleOptions(
                     children: complexSuggestion,
-                    optionAsString: (option) {
+                    folderOptionAsString: (option) {
+                      return option;
+                    },
+                    fileOptionAsString: (option) {
                       return option;
                     },
                   );
@@ -184,7 +187,7 @@ class _ExampleState extends State<Example> {
   }
 }
 
-final List<StructuredDataType<String>> complexSuggestion = [
+final List<StructuredDataType<String, String>> complexSuggestion = [
   const FolderStructure(item: 'Folder 1', children: [
     FolderStructure(item: 'Folder 1.1', children: [
       FolderStructure(item: 'Folder 2.1.1', children: [

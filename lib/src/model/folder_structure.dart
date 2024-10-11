@@ -4,13 +4,13 @@
 //   const StructuredDataRoot({required this.data});
 // }
 
-sealed class StructuredDataType<T> {
+sealed class StructuredDataType<F, T> {
   const StructuredDataType();
 }
 
-class FolderStructure<T> extends StructuredDataType<T> {
-  final T item;
-  final List<StructuredDataType<T>> children;
+class FolderStructure<F, T> extends StructuredDataType<F, T> {
+  final F item;
+  final List<StructuredDataType<F, T>> children;
 
   const FolderStructure({
     required this.item,
@@ -18,7 +18,7 @@ class FolderStructure<T> extends StructuredDataType<T> {
   });
 }
 
-class FileStructureOptions<T> extends StructuredDataType<T> {
+class FileStructureOptions<F, T> extends StructuredDataType<F, T> {
   final T item;
 
   const FileStructureOptions({
@@ -26,9 +26,9 @@ class FileStructureOptions<T> extends StructuredDataType<T> {
   });
 }
 
-extension StructuredDataRootExtension<T> on StructuredDataType<T> {
-  T get item => switch (this) {
-        FolderStructure<T>(item: T item) => item,
-        FileStructureOptions<T>(item: T item) => item,
-      };
-}
+// extension StructuredDataRootExtension<T> on StructuredDataType<T> {
+//   T get item => switch (this) {
+//         FolderStructure<T>(item: T item) => item,
+//         FileStructureOptions<T>(item: T item) => item,
+//       };
+// }

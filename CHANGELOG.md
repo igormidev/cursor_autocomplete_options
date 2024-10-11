@@ -1,3 +1,12 @@
+## [2.1.0] 10-10-2024
+### ⚠️ BREAKING CHANGES!
+* Now, developer has biggest controll on item builder and item mapper
+* Using 2 generics now, one to folder and one to file
+
+## [2.0.0] 07-10-2024
+### ⚠️ BREAKING CHANGES!
+* Now, you can open sub folders in dialog
+
 ## [1.7.1] 01-08-2024
 * Backspace now will focus
 

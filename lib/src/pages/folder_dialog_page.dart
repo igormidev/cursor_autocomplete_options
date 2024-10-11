@@ -8,26 +8,27 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
-class FolderDialogPage<T> extends StatefulWidget {
+class FolderDialogPage<F, T> extends StatefulWidget {
   /// The height of the overlay card that the options will be displayed.
   final double height;
 
   /// The width of the overlay card that the options will be displayed.
   final double width;
 
-  final List<StructuredDataType<T>> children;
+  final List<StructuredDataType<F, T>> children;
 
   /// The callback that will be called when the user close the overlay.
   final void Function() onClose;
 
   /// {@macro optionAsString}
-  final String Function(T option) optionAsString;
+  final String Function(T option) fileOptionAsString;
+  final String Function(F option) folderOptionAsString;
 
   /// The callback that will be called when the user select an option.
   final void Function(T option) onSelect;
 
   final Widget Function(
-    T option,
+    StructuredDataType<F, T> option,
     bool isSelected,
     void Function() onSelectCallback,
   )? tileBuilder;
@@ -38,17 +39,18 @@ class FolderDialogPage<T> extends StatefulWidget {
     required this.height,
     required this.width,
     required this.onClose,
-    required this.optionAsString,
+    required this.fileOptionAsString,
+    required this.folderOptionAsString,
     required this.onSelect,
     this.tileBuilder,
   });
 
   @override
-  State<FolderDialogPage<T>> createState() => _FolderDialogPageState<T>();
+  State<FolderDialogPage<F, T>> createState() => _FolderDialogPageState<F, T>();
 }
 
-class _FolderDialogPageState<T> extends State<FolderDialogPage<T>> {
-  late List<PagePayload<T>> currentPage;
+class _FolderDialogPageState<F, T> extends State<FolderDialogPage<F, T>> {
+  late List<PagePayload<F, T>> currentPage;
   late final Debouncer debouncer;
 
   @override
@@ -94,7 +96,7 @@ class _FolderDialogPageState<T> extends State<FolderDialogPage<T>> {
       child: Navigator(
         onDidRemovePage: (route) {},
         pages: currentPage.mapper((
-          PagePayload<T> options,
+          PagePayload<F, T> options,
           bool isFirst,
           bool isLast,
           int index,
@@ -123,8 +125,15 @@ class _FolderDialogPageState<T> extends State<FolderDialogPage<T>> {
                     final queryFilterText =
                         queryText.replaceAll(' ', '').toLowerCase();
                     final items = currentPage.where((element) {
-                      final optionAsString =
-                          widget.optionAsString(element.item);
+                      // final optionAsString =
+                      //     widget.optionAsString(element.item);
+
+                      final optionAsString = switch (element) {
+                        FolderStructure<F, T>() =>
+                          widget.folderOptionAsString(element.item),
+                        FileStructureOptions<F, T>() =>
+                          widget.fileOptionAsString(element.item),
+                      };
                       return optionAsString
                           .replaceAll(' ', '')
                           .toLowerCase()
@@ -260,7 +269,7 @@ class _FolderDialogPageState<T> extends State<FolderDialogPage<T>> {
                                     itemScrollController: itemScrollController,
                                     itemCount: items.length,
                                     itemBuilder: (context, index) {
-                                      final StructuredDataType<T> option =
+                                      final StructuredDataType<F, T> option =
                                           items[index];
 
                                       void tapFunction() {
@@ -271,15 +280,26 @@ class _FolderDialogPageState<T> extends State<FolderDialogPage<T>> {
 
                                       if (widget.tileBuilder != null) {
                                         return widget.tileBuilder!(
-                                          option.item,
+                                          // option.item,
+                                          switch (option) {
+                                            FolderStructure<F, T>() => option,
+                                            FileStructureOptions<F, T>() =>
+                                              option,
+                                          },
                                           isSelected,
                                           tapFunction,
                                         );
                                       }
 
-                                      final text = option.item;
-                                      final optionAsString =
-                                          widget.optionAsString(text);
+                                      // final text = option.item;
+                                      // final optionAsString =
+                                      //     widget.optionAsString(text);
+                                      final optionAsString = switch (option) {
+                                        FolderStructure<F, T>() => widget
+                                            .folderOptionAsString(option.item),
+                                        FileStructureOptions<F, T>() => widget
+                                            .fileOptionAsString(option.item),
+                                      };
 
                                       return InkWell(
                                         borderRadius: BorderRadius.circular(20),
@@ -305,9 +325,9 @@ class _FolderDialogPageState<T> extends State<FolderDialogPage<T>> {
                                           child: Row(
                                             children: [
                                               switch (option) {
-                                                FolderStructure<T>() =>
+                                                FolderStructure<F, T>() =>
                                                   const Icon(Icons.folder),
-                                                FileStructureOptions<T>() =>
+                                                FileStructureOptions<F, T>() =>
                                                   const Icon(Icons.file_copy),
                                               },
                                               const SizedBox(width: 8),
@@ -340,19 +360,23 @@ class _FolderDialogPageState<T> extends State<FolderDialogPage<T>> {
     return currentPage.last.itemPositionsListener.itemPositions.value.isEmpty;
   }
 
-  void _optionChoose(StructuredDataType<T> option) {
+  void _optionChoose(StructuredDataType<F, T> option) {
+    final optionAsString = switch (option) {
+      FolderStructure<F, T>() => widget.folderOptionAsString(option.item),
+      FileStructureOptions<F, T>() => widget.fileOptionAsString(option.item),
+    };
     switch (option) {
-      case FileStructureOptions<T>(item: T item):
+      case FileStructureOptions<F, T>(item: T item):
         widget.onSelect(item);
-      case FolderStructure<T>():
-        // final last = currentPage.last.pageTitle;
+      case FolderStructure<F, T>():
         setState(() {
           currentPage = [
             ...currentPage,
             PagePayload(
               focusNode: FocusNode(),
               itemPositionsListener: ItemPositionsListener.create(),
-              pageTitle: '../${widget.optionAsString(option.item)}',
+              pageTitle: '../$optionAsString',
+              // pageTitle: '../${widget.optionAsString(option.item)}',
               // pageTitle: last == null
               //     ? widget.optionAsString(option.item)
               //     : '$last > ${widget.optionAsString(option.item)}',
@@ -643,12 +667,12 @@ Map<ShortcutActivator, Intent> _getLogicalKey() {
   return allLogicKeys;
 }
 
-class PagePayload<T> {
+class PagePayload<F, T> {
   final String? pageTitle;
   final FocusNode focusNode;
   final ItemPositionsListener itemPositionsListener;
   final ItemScrollController itemScrollController;
-  final List<StructuredDataType<T>> currentPage;
+  final List<StructuredDataType<F, T>> currentPage;
   final ValueNotifier<int> selectedIndex;
   final ValueNotifier<String> search;
 

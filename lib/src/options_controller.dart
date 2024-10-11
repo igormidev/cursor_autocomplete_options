@@ -69,7 +69,7 @@ import 'package:flutter/material.dart';
 /// Will call this callback after inserting the selected text in the cursor.
 /// {@endtemplate}
 
-class OptionsController<T> {
+class OptionsController<F, T> {
   /// {@macro textfieldTemplate}
   final ValueNotifier<TextEditingValue> _textEditingController;
 
@@ -184,13 +184,14 @@ class OptionsController<T> {
   ///
   /// {@macro tileBuilder}
   ///
-  /// - [optionAsString]<br>
+  /// - [fileOptionAsString]<br>
   /// {@macro optionAsString}
   void showSimpleOptions({
-    required List<StructuredDataType<T>> children,
-    required String Function(T option)? optionAsString,
+    required List<StructuredDataType<F, T>> children,
+    String Function(T option)? fileOptionAsString,
+    String Function(F option)? folderOptionAsString,
     Widget Function(
-      T option,
+      StructuredDataType<F, T> option,
       bool isSelected,
       void Function() onSelectCallback,
     )? tileBuilder,
@@ -205,25 +206,33 @@ class OptionsController<T> {
             child: SizedBox(
               width: overlayCardWeight,
               height: overlayCardHeight,
-              child: FolderDialogPage<T>(
+              child: FolderDialogPage<F, T>(
                 children: children,
                 width: overlayCardWeight,
                 height: overlayCardHeight,
                 onClose: closeOverlayIfOpen,
-                optionAsString: (option) {
-                  if (optionAsString != null) {
-                    return optionAsString.call(option);
+                fileOptionAsString: (option) {
+                  if (fileOptionAsString != null) {
+                    return fileOptionAsString.call(option);
+                  } else {
+                    return option as String;
+                  }
+                },
+                folderOptionAsString: (option) {
+                  if (folderOptionAsString != null) {
+                    return folderOptionAsString.call(option);
                   } else {
                     return option as String;
                   }
                 },
                 tileBuilder: tileBuilder,
                 onSelect: (T option) async {
-                  final selectInCursor = await selectInCursorParser
-                          ?.call(option) ??
-                      InsertInCursorPayload(
-                        text: optionAsString?.call(option) ?? option.toString(),
-                      );
+                  final selectInCursor =
+                      await selectInCursorParser?.call(option) ??
+                          InsertInCursorPayload(
+                            text: fileOptionAsString?.call(option) ??
+                                option.toString(),
+                          );
                   await _manegeSelectedText(option, selectInCursor);
 
                   if (willAutomaticallyCloseDialogAfterSelection) {
@@ -254,14 +263,15 @@ class OptionsController<T> {
   /// - [optionAsString]<br>
   /// {@macro optionAsString}
   void showComplexOptions({
-    required String Function(T option)? optionAsString,
+    required String Function(T option)? fileOptionAsString,
+    required String Function(F option)? folderOptionAsString,
     required Widget Function(
       BuildContext context,
-      Widget Function(List<StructuredDataType<T>> options)
+      Widget Function(List<StructuredDataType<F, T>> options)
           listTilesWithOptionsBuilder,
     ) suggestionCardBuilder,
     Widget Function(
-      T option,
+      StructuredDataType<F, T> option,
       bool isSelected,
       void Function() onSelectCallback,
     )? tileBuilder,
@@ -279,14 +289,21 @@ class OptionsController<T> {
               child: suggestionCardBuilder(
                 context,
                 (options) {
-                  return FolderDialogPage<T>(
+                  return FolderDialogPage<F, T>(
                     children: options,
                     width: overlayCardWeight,
                     height: overlayCardHeight,
                     onClose: closeOverlayIfOpen,
-                    optionAsString: (option) {
-                      if (optionAsString != null) {
-                        return optionAsString.call(option);
+                    fileOptionAsString: (option) {
+                      if (fileOptionAsString != null) {
+                        return fileOptionAsString.call(option);
+                      } else {
+                        return option as String;
+                      }
+                    },
+                    folderOptionAsString: (option) {
+                      if (folderOptionAsString != null) {
+                        return folderOptionAsString.call(option);
                       } else {
                         return option as String;
                       }
@@ -296,7 +313,7 @@ class OptionsController<T> {
                       final selectInCursor =
                           await selectInCursorParser?.call(option) ??
                               InsertInCursorPayload(
-                                text: optionAsString?.call(option) ??
+                                text: fileOptionAsString?.call(option) ??
                                     option.toString(),
                               );
                       await _manegeSelectedText(option, selectInCursor);
